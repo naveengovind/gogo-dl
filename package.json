@@ -1,0 +1,11 @@
+{
+  "name": "animedl",
+  "version": "1.0.0",
+  "dependencies": {
+    "@types/selenium-webdriver": "^4.0.11",
+    "prompt-sync": "^4.2.0",
+    "selenium-webdriver": "^4.0.0-alpha.8",
+    "yargs": "^16.2.0",
+    "youtube-dl-wrap": "^2.0.0"
+  }
+}
