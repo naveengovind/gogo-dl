@@ -1,1 +1,1 @@
-# animedl
+# gogo-dl
