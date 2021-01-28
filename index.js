@@ -5,6 +5,7 @@ require('chromedriver');
 const chrome = require('selenium-webdriver/chrome');
 const yargs = require('yargs');
 const prompt = require('prompt-sync')({sigint: true});
+const chromium = require('chromium');
 
     yargs.scriptName("gogo-dl")
     .usage('$0 <cmd> [args]')
@@ -31,8 +32,10 @@ const prompt = require('prompt-sync')({sigint: true});
 
 async function search(name, down) {
     let options = new chrome.Options();
+    options.setChromeBinaryPath(chromium.path);
     options.addArguments("--headless")
     options.addArguments("--mute-audio");
+
     let driver = await new Builder()
         .forBrowser('chrome')
         .setChromeOptions(options)
