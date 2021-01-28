@@ -1,9 +1,12 @@
+#!/usr/bin/env node
+
 const {Builder, By, Key, until} = require('selenium-webdriver');
+require('chromedriver');
 const chrome = require('selenium-webdriver/chrome');
 const yargs = require('yargs');
 const prompt = require('prompt-sync')({sigint: true});
 
-    yargs.scriptName("anime-dl")
+    yargs.scriptName("gogo-dl")
     .usage('$0 <cmd> [args]')
     .command('dl [title]', 'welcome to anime downlaoder', (yargs) => {
         yargs.positional('title', {
@@ -89,7 +92,7 @@ async function download( url, name) {
 
 //Execute and return an EventEmitter
     let youtubeDlEmitter = youtubeDlWrap.exec([url,
-        "-f", "best", "-o", "~/" + name])
+        "-f", "best", "-o", process.cwd() +"/"+ name])
         .on("progress", (progress) =>
             console.log(progress.percent, progress.totalSize, progress.currentSpeed, progress.eta))
         //Exposes all youtube-dl events, for example:
