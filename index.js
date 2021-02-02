@@ -10,6 +10,8 @@ const prompt = require('prompt-sync')({sigint: true});
 const chalk = require('chalk');
 const progress = require('request-progress');
 cliProgress = require('cli-progress');
+const cp = require('child_process')
+const vlcCommand = require('vlc-command')
 
 const BASE_URL = 'https://gogoanime.so';
 
@@ -32,6 +34,15 @@ yargs.scriptName("gogo-dl")
         })
     }, async function (argv) {
         await prompter(argv.title, 'list')
+    })
+    .command('watch [title]', 'stream the anime through a media player(VLC)', (yargs) => {
+        yargs.positional('title', {
+            type: 'string',
+            default: 'JoJo',
+            describe: 'title of the anime'
+        })
+    }, async function (argv) {
+        await prompter(argv.title, 'watch')
     })
     .help()
     .argv
@@ -68,7 +79,10 @@ async function prompter(title, type){
     console.log()
     if(type === 'dl')
         await dl(options[choice], lower, upper)
-   // else if(type === 'list')
+    else if(type === 'list')
+        await list(options[choice], lower, upper)
+    else if(type === 'watch')
+        await watch(options[choice], lower, upper)
 }
 
 async function dl(anime, lower, upper)
@@ -76,6 +90,46 @@ async function dl(anime, lower, upper)
     if(lower <= upper) {
         await downloadVideo(anime, lower, upper)
     }
+}
+
+async function list(anime, lower, upper)
+{
+    for(let i = lower; i <= upper; i++)
+    {
+        let stream = await getVidStreamURL(anime.href, i)
+        let url = await getVideoSrc(stream)
+        console.log(url)
+    }
+}
+
+async function watch(anime, lower, upper)
+{
+    let urls = " "
+    for(let i = lower; i <= upper; i++)
+    {
+        let stream = await getVidStreamURL(anime.href, i)
+        let url = await getVideoSrc(stream)
+        urls += url + ' '
+    }
+
+    vlcCommand(function (err, cmd) {
+        if (err) {
+            console.log(chalk.redBright('could not find VLC command path make sure you have VLC installed with command line tools'))
+            process.exit(1)
+        }
+        if (process.platform === 'win32') {
+            cp.execFile(cmd, [urls], function (err, stdout) {
+                if (err) return console.error(err)
+                console.log(stdout)
+            })
+        } else {
+            cp.exec(cmd + urls, function (err, stdout) {
+                if (err) return console.error(err)
+                console.log(stdout)
+            })
+        }
+    })
+
 }
 
 async function getEpMetaData(href)
@@ -158,7 +212,6 @@ async function downloadVideo(anime, lower, upper) {
     const progressBar = new cliProgress.SingleBar({
         format: `ep: ${lower} |` + chalk.cyan('{bar}') + '| {percentage}% | ETA: {eta}s',
         clearOnComplete: true,
-        hideCursor: true
     }, cliProgress.Presets.shades_classic);
 
     let totalBytes = 0
