@@ -1,13 +1,22 @@
 {
   "name": "gogo-dl",
-  "version": "1.0.2",
+  "version": "1.0.5",
   "dependencies": {
     "@types/selenium-webdriver": "^4.0.11",
-    "chromedriver": "^88.0.0",
-    "chromium": "^3.0.2",
+    "axios": "^0.19.2",
+    "chromedriver": "^83.0.1",
+    "chromium-binary": "^83.0.4103-116",
+    "cli-progress": "^3.8.2",
+    "colors": "^1.4.0",
+    "got": "^11.8.1",
+    "jsdom": "^16.4.0",
+    "multi-progress": "^4.0.0",
+    "multi-progress-bars": "^3.1.2",
+    "progress": "^2.0.3",
     "prompt-sync": "^4.2.0",
     "selenium-webdriver": "^4.0.0-alpha.8",
     "yargs": "^16.2.0",
+    "youtube-dl": "^3.1.0",
     "youtube-dl-wrap": "^2.0.0"
   },
   "bin": {
