@@ -1,166 +1,210 @@
-#!/usr/bin/env node
-
-const {Builder, By, Key, until} = require('selenium-webdriver');
-require('chromedriver');
-const Fs = require('fs')
-const Path = require('path')
-const Axios = require('axios')
-const ProgressBar = require('progress')
-const cliProgress = require('cli-progress');
-const chrome = require('selenium-webdriver/chrome');
+const got = require('got');
+const jsdom = require("jsdom");
+const { JSDOM } = jsdom;
+const https = require('https');
+const fs = require('fs');
 const yargs = require('yargs');
 const prompt = require('prompt-sync')({sigint: true});
-const chromiumBinary = require('chromium-binary');
-const colors = require('colors');
-require('youtube-dl')
+const chalk = require('chalk');
+const progress = require('request-progress');
+cliProgress = require('cli-progress');
 
+const BASE_URL = 'https://gogoanime.so';
 
-    yargs.scriptName("gogo-dl")
+yargs.scriptName("gogo-dl")
     .usage('$0 <cmd> [args]')
-    .command('dl [title]', 'welcome to anime downlaoder', (yargs) => {
+    .command('dl [title]', 'download anime into your current directory', (yargs) => {
         yargs.positional('title', {
             type: 'string',
-            default: 'bleach',
+            default: 'JoJo',
             describe: 'title of the anime'
         })
     }, async function (argv) {
-      await search(argv.title, true)
+        await prompter(argv.title, 'dl')
     })
-    .command('list [title]', 'welcome to anime downlaoder', (yargs) => {
+    .command('list [title]', 'list the urls to the .mp4 files', (yargs) => {
         yargs.positional('title', {
             type: 'string',
-            default: 'bleach',
+            default: 'JoJo',
             describe: 'title of the anime'
         })
     }, async function (argv) {
-        await search(argv.title, false)
+        await prompter(argv.title, 'list')
     })
     .help()
     .argv
 
-let downloading = true
+async function prompter(title, type){
 
-async function search(name, down) {
-    let options = new chrome.Options();
-    options.setChromeBinaryPath(chromiumBinary.path);
-    options.addArguments("--headless")
-    options.addArguments("--mute-audio");
+    let options = await search(title)
+    console.log()
+    for (let i = 0; i < options.length; i++)
+        console.log(`[${chalk.yellow(i)}]: ${options[i].name}`)
 
-    let driver = await new Builder()
-        .forBrowser('chrome')
-        .setChromeOptions(options)
-        .build();
-    try {
-        process.stdout.write('fetching data...')
-        await driver.get("https://gogoanime.so//search.html?keyword=" + name);
-        let elems = await driver.findElements(By.xpath("//*[@id=\"wrapper_bg\"]/section/section[1]/div/div[2]/ul/li"));
-        for (let i = 0; i < elems.length; i++) {
-            let temp = await elems[i].findElement(By.tagName("p")).findElement(By.tagName("a"));
-            if(i === 0) {
-                process.stdout.write("\r\x1b[K")
-                console.log()
-            }
-            console.log("["+i + "]: "+ await temp.getAttribute("title"));
-            elems[i]  = temp;
-        }
-        console.log()
-        const raw = await prompt('Which one [0]: ');
-        let choice = Number(raw)
-        await driver.get(await elems[choice].getAttribute("href"));
-        let episodes = await driver.findElement(By.id("episode_page")).getText();
-        console.log("\nThere are " + episodes.substring(episodes.lastIndexOf('-')+1) + " episodes");
+    console.log()
+    const raw = await prompt('Which one [0]: ');
+    let choice = Number(raw)
 
+    let meta = await getEpMetaData(options[choice].href)
 
-        let range = await prompt('Episode range [1:10]: ');
-        let ind = range.toString().indexOf(':')
-        let lower = 1
-        let upper = 1
-        if (ind === -1 || ind === undefined)
-        {
-            lower = Number(range.toString().trim())
-            upper = Number(range.toString().trim())
-        }
-        else{
-            lower = Number(range.toString().substring(0, ind).trim())
-            upper = Number(range.toString().substring(ind+1).trim())
-        }
-        let base = await driver.getCurrentUrl();
-        let urls = await getUrls(driver, base, lower, upper);
-        let baseTitle = base.substring(base.lastIndexOf('/') + 1) + "-episode-"
-        if (down)
-        {
-            for (let i = lower; i <= upper; i++) {
-                //console.log("downloading episode " + i);
-                downloading = true
-                await download(urls[i - lower], baseTitle + i + ".mp4", i);
-               // while(downloading){}
-            }
-        }
-        else{
-            urls.forEach(url => console.log(url))
-        }
+    console.log(`\nThere are ${chalk.magenta(meta.lastEpisode)} episodes`)
 
-    } finally {
-        await driver.quit();
+    let range = await prompt(`Episode range [1-${meta.lastEpisode}]: `);
+    let ind = range.toString().indexOf('-')
+    let lower = 1
+    let upper = 1
+
+    if (ind === -1 || ind === undefined)
+    {
+        lower = Number(range.toString().trim())
+        upper = Number(range.toString().trim())
     }
+    else{
+        lower = Number(range.toString().substring(0, ind).trim())
+        upper = Number(range.toString().substring(ind+1).trim())
+    }
+    console.log()
+    if(type === 'dl')
+        await dl(options[choice], lower, upper)
+   // else if(type === 'list')
 }
 
-async function getUrls( driver, base, lower, upper)
+async function dl(anime, lower, upper)
 {
-    process.stdout.write('fetching episodes...')
-    let urls = [];
-    for (let i = lower; i <= upper; i++) {
-        await driver.get("https://gogoanime.so/" + base.substring(base.lastIndexOf('/') + 1) + "-episode-" + i);
-        await driver.get(await driver.findElement(By.xpath("//*[@id=\"load_anime\"]/div/div/iframe")).getAttribute("src"));
-        //start video player to expose source url
-        await driver.findElement(By.xpath("/html/body")).sendKeys(Key.TAB, Key.TAB, Key.SPACE);
-        let url = await driver.findElement(By.xpath("//*[@id=\"myVideo\"]/div[2]/div[4]/video")).getAttribute("src");
-        await urls.push(url);
-        if(i === lower) {
-            process.stdout.write("\r\x1b[K")
-            console.log()
-        }
-        console.log(('fetched episode ' + i).green)
+    if(lower <= upper) {
+        await downloadVideo(anime, lower, upper)
     }
-     return urls;
 }
 
-async function download( url, name, episode) {
-    const YoutubeDlWrap = require("youtube-dl-wrap");
-    const youtubeDlWrap = new YoutubeDlWrap();
-    //Execute and return an EventEmitter
+async function getEpMetaData(href)
+{
+    let url = BASE_URL + href
+    return await got(url).then(response => {
+        const dom = new JSDOM(response.body);
+        let eplist = dom.window.document.getElementById('episode_page').children
+        let lastEp = eplist.item(eplist.length-1).getElementsByTagName('a').item(0).getAttribute('ep_end')
+        let ret = new MetaData(Number(lastEp))
+        return ret
+    }).catch(err => {
+        console.log(err);
+    });
+}
+async function search(keyword)
+{
+    let searchURL = BASE_URL + "//search.html?keyword=" + keyword
 
-    let youtubeDlEmitter = await youtubeDlWrap.exec([url,
-        "-f", "best", "-o", process.cwd() +"/"+ name])
-        .on("progress", (progress) =>
+    return await got(searchURL).then(response => {
+        let results = []
+        const dom = new JSDOM(response.body)
+        let itemList = dom.window.document.getElementsByClassName('items')
+        let items = itemList.item(0).children
+        for(let i = 0; i < items.length; i++)
         {
-            let downloaded = ((Number(progress.percent)/100) * Number(progress.totalSize.replace(/\D/g, "")))
-            //process.stdout.write("\r\x1b[K")
-            console.log( `[ep:${episode}, ${(downloaded/100).toFixed(2)}/${progress.totalSize}(${progress.percent}%), DL:${progress.currentSpeed}, ETA:${progress.eta}]\n`)
-        })
-        //Exposes all youtube-dl events, for example:
-        //[download] Destination: output.mp4 -> eventType = download and eventData = Destination: output.mp4
-        //.on("youtubeDlEvent", (eventType, eventData) => console.log(eventType, eventData))
-        .on("error", (error) => console.error(error))
-        .on("close", () => {
-            downloading = false
+            let href = (items.item(i).getElementsByClassName('name').item(0).getElementsByTagName('a').item(0).href)
+            let name = (items.item(i).getElementsByClassName('name').item(0).getElementsByTagName('a').item(0).title)
+            let img = (items.item(i).getElementsByClassName('img').item(0).getElementsByTagName('a').item(0).getElementsByTagName('img').item(0).src)
+            let released = (items.item(i).getElementsByClassName('released').item(0).textContent)
+            released = released.substring(released.indexOf(': ') + 2).trim()
+            results[i] = (new Anime(name, href, img, Number(released)))
+        }
+        return results
+    }).catch(err => {
+        console.log(err);
+    });
+}
+
+async function getVidStreamURL(href, episode)
+{
+    let url = BASE_URL + '/' + href.substring(href.lastIndexOf('/')+1)+ "-episode-" + episode
+    return await got(url).then(response => {
+        const dom = new JSDOM(response.body);
+        let streamlink = dom.window.document.getElementsByClassName('vidcdn').item(0)
+            .getElementsByTagName('a').item(0).getAttribute('data-video');
+        return streamlink
+    }).catch(err => {
+        console.log(err);
+    });
+
+}
+
+async function getVideoSrc(url) {
+    url = 'https://' + url
+    return await got(url).then(response => {
+        const dom = new JSDOM(response.body);
+        let script = dom.window.document.querySelector('body > div > div > script').textContent;
+        let index1 = script.indexOf('playerInstance.setup(')
+        let srcJSON = script.substring(index1+21, script.indexOf(');',index1))
+        let index2 = srcJSON.indexOf("file: '")
+        let srcURL = srcJSON.substring(index2+7, srcJSON.indexOf("',")).trim()
+        return srcURL
+    }).catch(err => {
+        console.log(err);
+    });
+}
+
+
+async function downloadVideo(anime, lower, upper) {
+
+    let stream = await getVidStreamURL(anime.href, lower)
+    let url = await getVideoSrc(stream)
+    name = anime.name.trim().replaceAll('/', '-').replaceAll(' ', '-') + '-episode-' + lower
+    let dest = process.cwd()+"/"+ name + '.mp4'
+
+
+    let file = fs.createWriteStream(dest);
+
+    const progressBar = new cliProgress.SingleBar({
+        format: `ep: ${lower} |` + chalk.cyan('{bar}') + '| {percentage}% | ETA: {eta}s',
+        clearOnComplete: true
+    }, cliProgress.Presets.shades_classic);
+
+    let totalBytes = 0
+
+    let request = https.get(url, function(response) {
+        totalBytes = response.headers['content-length'];
+        progressBar.start(totalBytes, 0);
+
+        response.pipe(file);
+        file.on('finish',  async function() {
+            file.close();  // close() is async, call cb after close completes.
+            await progressBar.update(totalBytes)
+            progressBar.stop();
+            console.log(chalk.green('finished downloading episode ' + lower))
+            dl(anime, lower+1, upper)
         });
+    }).on('error', async function(err) { // Handle errors
+        await fs.unlink(dest, function () {}); // Delete the file async. (But we don't check the result)
+    });
+
+    progress((request), {})
+        .on('progress', function (state) {
+           // console.log('progress', state);
+            progressBar.update(state.size.transferred, {
+                eta: state.time.remaining
+            });
+        })
+
 }
 
 
-async function downloadVid (url, name, episode) {
-    const { data, headers } = await Axios({
-        url,
-        method: 'GET',
-        responseType: 'stream'
-    })
-    const totalLength = headers['content-length']
-
-
-    const writer = Fs.createWriteStream(
-        process.cwd() +"/"+ name
-    )
-
-    data.on('data', (chunk) => b2.update(b2.value++))
-    data.pipe(writer)
+let Anime = class Anime{
+    constructor(name, href, img, released)
+    {
+        this.name = name
+        this.href = href
+        this.img = img
+        this.released = released
+    }
 }
+//TODO
+let MetaData = class MetaData{
+    constructor(lastEpisode, type, plotSummary, genre, released, status)
+    {
+        this.lastEpisode = lastEpisode
+        this.satus = status;
+        this.plotSummary = plotSummary
+        this.genre = genre
+        this.released = released
+    }
+}
+
