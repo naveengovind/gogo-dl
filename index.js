@@ -1,3 +1,5 @@
+#! /usr/bin/env node
+
 const got = require('got');
 const jsdom = require("jsdom");
 const { JSDOM } = jsdom;
@@ -155,7 +157,8 @@ async function downloadVideo(anime, lower, upper) {
 
     const progressBar = new cliProgress.SingleBar({
         format: `ep: ${lower} |` + chalk.cyan('{bar}') + '| {percentage}% | ETA: {eta}s',
-        clearOnComplete: true
+        clearOnComplete: true,
+        hideCursor: true
     }, cliProgress.Presets.shades_classic);
 
     let totalBytes = 0
