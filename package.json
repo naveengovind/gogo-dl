@@ -14,5 +14,5 @@
   },
   "bin": {
     "gogo-dl": "index.js"
-  },
+  }
 }
