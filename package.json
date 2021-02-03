@@ -1,6 +1,6 @@
 {
   "name": "gogo-dl",
-  "version": "1.0.5",
+  "version": "2.0.0",
   "license": "(MIT OR Apache-2.0)",
   "dependencies": {
     "@types/yargs": "^16.0.0",
@@ -15,5 +15,9 @@
   },
   "bin": {
     "gogo-dl": "index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/naveengovind/gogo-dl"
   }
 }

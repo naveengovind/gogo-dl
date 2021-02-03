@@ -43,8 +43,6 @@ async function prompter(title, type){
 
     let options = await search(title)
 
-    console.log()
-
     let choices = {
         type: 'select',
         name: 'value',
