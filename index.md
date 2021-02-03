@@ -1,37 +1,57 @@
-## Welcome to GitHub Pages
 
-You can use the [editor on GitHub](https://github.com/naveengovind/gogo-dl/edit/gh-pages/index.md) to maintain and preview the content for your website in Markdown files.
 
-Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://jekyllrb.com/) to rebuild the pages in your site, from the content in your Markdown files.
+<h1 align="center">gogo-dl</h1>
+<p align="center">
+  <b> Powerful, lightweight user-friendly tool for downloading anime.</b>
+</p>
 
-### Markdown
+<img src = "https://github.com/naveengovind/gogo-dl/blob/main/exampleImages/Screen%20Shot%202021-02-02%20at%206.44.33%20PM.png?raw=true" align="center"> </img>
 
-Markdown is a lightweight and easy-to-use syntax for styling your writing. It includes conventions for
 
-```markdown
-Syntax highlighted code block
+## Install
 
-# Header 1
-## Header 2
-### Header 3
-
-- Bulleted
-- List
-
-1. Numbered
-2. List
-
-**Bold** and _Italic_ and `Code` text
-
-[Link](url) and ![Image](src)
+Linux, Windows, MacOS
 ```
+npm i gogo-dl -g
+```
+## Features
 
-For more details see [GitHub Flavored Markdown](https://guides.github.com/features/mastering-markdown/).
+- Full quality downloads
+- Fast mirrors for streaming and downloading
+- Batch downloads
+- Fast searching
+- Streaming using VLC (mpv, IINA: coming soon)
+- Support for DUB and SUB anime
 
-### Jekyll Themes
+## Usage
 
-Your Pages site will use the layout and styles from the Jekyll theme you have selected in your [repository settings](https://github.com/naveengovind/gogo-dl/settings). The name of this theme is saved in the Jekyll `_config.yml` configuration file.
+#### gogo-dl has two sub commands ``` dl``` , and ```watch```
 
-### Support or Contact
+*episode range should be entered "[start]-[end]"
+* ex:  "13-40"
+* this range is inclusive
 
-Having trouble with Pages? Check out our [documentation](https://docs.github.com/categories/github-pages-basics/) or [contact support](https://support.github.com/contact) and we’ll help you sort it out.
+*you can also enter a single episode
+- ex "14"
+
+### gogo-dl dl [title]
+
+<img src = "https://github.com/naveengovind/gogo-dl/blob/main/exampleImages/Screen%20Shot%202021-02-02%20at%206.44.07%20PM.png?raw=true" align="center"> </img>
+
+#### downloads the episodes to the path you are currently in
+
+### gogo-dl watch [title]
+
+<img src = "https://github.com/naveengovind/gogo-dl/blob/main/exampleImages/Screen%20Shot%202021-02-02%20at%206.42.39%20PM.png?raw=true" align="center"> </img>
+
+#### fetches all the episodes and adds them in a queue into your media player(VLC)
+
+## Disclaimer
+
+```
+gogo-dl was not developed for pirating anime but educational and private usage.
+
+It may be illegal to use this in your country,
+
+I am not responsible in any way for the usage of others.
+```
