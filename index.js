@@ -26,15 +26,6 @@ yargs.scriptName("gogo-dl")
     }, async function (argv) {
         await prompter(argv.title, 'dl')
     })
-    .command('list [title]', 'list the urls to the .mp4 files', (yargs) => {
-        yargs.positional('title', {
-            type: 'string',
-            default: 'JoJo',
-            describe: 'title of the anime'
-        })
-    }, async function (argv) {
-        await prompter(argv.title, 'list')
-    })
     .command('watch [title]', 'stream the anime through a media player(VLC)', (yargs) => {
         yargs.positional('title', {
             type: 'string',
@@ -51,6 +42,7 @@ async function prompter(title, type){
 
     let options = await search(title)
     console.log()
+
     for (let i = 0; i < options.length; i++)
         console.log(`[${chalk.yellow(i)}]: ${options[i].name}`)
 
@@ -79,8 +71,6 @@ async function prompter(title, type){
     console.log()
     if(type === 'dl')
         await dl(options[choice], lower, upper)
-    else if(type === 'list')
-        await list(options[choice], lower, upper)
     else if(type === 'watch')
         await watch(options[choice], lower, upper)
 }
@@ -89,16 +79,6 @@ async function dl(anime, lower, upper)
 {
     if(lower <= upper) {
         await downloadVideo(anime, lower, upper)
-    }
-}
-
-async function list(anime, lower, upper)
-{
-    for(let i = lower; i <= upper; i++)
-    {
-        let stream = await getVidStreamURL(anime.href, i)
-        let url = await getVideoSrc(stream)
-        console.log(url)
     }
 }
 
@@ -142,18 +122,22 @@ async function getEpMetaData(href)
         let ret = new MetaData(Number(lastEp))
         return ret
     }).catch(err => {
-        console.log(err);
+        console.log(chalk.redBright('unable to get meta data'))
+        process.exit(1)
     });
 }
 async function search(keyword)
 {
+
     let searchURL = BASE_URL + "//search.html?keyword=" + keyword
 
     return await got(searchURL).then(response => {
         let results = []
         const dom = new JSDOM(response.body)
         let itemList = dom.window.document.getElementsByClassName('items')
+
         let items = itemList.item(0).children
+
         for(let i = 0; i < items.length; i++)
         {
             let href = (items.item(i).getElementsByClassName('name').item(0).getElementsByTagName('a').item(0).href)
@@ -165,7 +149,8 @@ async function search(keyword)
         }
         return results
     }).catch(err => {
-        console.log(err);
+        console.log(chalk.redBright('no results found for ') + chalk.yellow(keyword))
+        process.exit(1)
     });
 }
 
@@ -178,7 +163,8 @@ async function getVidStreamURL(href, episode)
             .getElementsByTagName('a').item(0).getAttribute('data-video');
         return streamlink
     }).catch(err => {
-        console.log(err);
+        console.log(chalk.redBright('unable to find video URL'))
+        process.exit(1)
     });
 
 }
@@ -194,7 +180,8 @@ async function getVideoSrc(url) {
         let srcURL = srcJSON.substring(index2+7, srcJSON.indexOf("',")).trim()
         return srcURL
     }).catch(err => {
-        console.log(err);
+        console.log(chalk.redBright('unable to get video source'))
+        process.exit(1)
     });
 }
 
