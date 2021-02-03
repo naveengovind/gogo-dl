@@ -6,7 +6,7 @@ const { JSDOM } = jsdom;
 const https = require('https');
 const fs = require('fs');
 const yargs = require('yargs');
-const prompt = require('prompt-sync')({sigint: true});
+const prompts = require('prompts');
 const chalk = require('chalk');
 const progress = require('request-progress');
 cliProgress = require('cli-progress');
@@ -14,6 +14,7 @@ const cp = require('child_process')
 const vlcCommand = require('vlc-command')
 
 const BASE_URL = 'https://gogoanime.so';
+
 
 yargs.scriptName("gogo-dl")
     .usage('$0 <cmd> [args]')
@@ -41,21 +42,48 @@ yargs.scriptName("gogo-dl")
 async function prompter(title, type){
 
     let options = await search(title)
+
     console.log()
+
+    let choices = {
+        type: 'select',
+        name: 'value',
+        message: 'Pick a show',
+        choices: [
+
+        ],
+        initial: 0,
+    };
 
     for (let i = 0; i < options.length; i++)
-        console.log(`[${chalk.yellow(i)}]: ${options[i].name}`)
+        choices.choices.push({title: options[i].name, description: ''+options[i].released, value: i})
 
-    console.log()
-    const raw = await prompt('Which one [0]: ');
-    let choice = Number(raw)
+    console.log();
 
-    let meta = await getEpMetaData(options[choice].href)
+    const response = await prompts(choices);
+    if(response.value === undefined)
+        process.exit(0)
+
+    await execute(options[response.value], type)
+
+}
+async function execute(anime, type){
+
+    let meta = await getEpMetaData(anime.href)
 
     console.log(`\nThere are ${chalk.magenta(meta.lastEpisode)} episodes`)
 
-    let range = await prompt(`Episode range [1-${meta.lastEpisode}]: `);
-    let ind = range.toString().indexOf('-')
+    let options = {
+        type: 'text',
+            name: 'value',
+        message: `Episode range [1-${meta.lastEpisode}]`
+    };
+
+    let range = await prompts(options);
+    if(range.value === undefined)
+        process.exit(0)
+    range = range.value
+    let ind = range.indexOf('-')
     let lower = 1
     let upper = 1
 
@@ -68,11 +96,13 @@ async function prompter(title, type){
         lower = Number(range.toString().substring(0, ind).trim())
         upper = Number(range.toString().substring(ind+1).trim())
     }
-    console.log()
-    if(type === 'dl')
-        await dl(options[choice], lower, upper)
+
+    if(type === 'dl') {
+        console.log()
+        await dl(anime, lower, upper)
+    }
     else if(type === 'watch')
-        await watch(options[choice], lower, upper)
+        await watch(anime, lower, upper)
 }
 
 async function dl(anime, lower, upper)
@@ -84,12 +114,14 @@ async function dl(anime, lower, upper)
 
 async function watch(anime, lower, upper)
 {
+    console.log()
     let urls = " "
     for(let i = lower; i <= upper; i++)
     {
         let stream = await getVidStreamURL(anime.href, i)
         let url = await getVideoSrc(stream)
         urls += url + ' '
+        console.log(chalk.green('fetched episode ' + i))
     }
 
     vlcCommand(function (err, cmd) {
