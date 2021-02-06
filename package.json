@@ -3,7 +3,6 @@
   "version": "2.0.0",
   "license": "(MIT OR Apache-2.0)",
   "dependencies": {
-    "@types/yargs": "^16.0.0",
     "chalk": "^4.1.0",
     "cli-progress": "^3.9.0",
     "got": "^11.8.1",
@@ -13,11 +12,24 @@
     "vlc-command": "^1.2.0",
     "yargs": "^16.2.0"
   },
+  "devDependencies": {
+    "@types/yargs": "^16.0.0"
+  },
   "bin": {
     "gogo-dl": "index.js"
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/naveengovind/gogo-dl"
-  }
+  },
+  "keywords": [
+    "gogoanime",
+    "anime-downloader",
+    "anime",
+    "gogo",
+    "gogoanime-downloader",
+    "twist.moe",
+    "gogoanime.so",
+    "moe"
+  ]
 }

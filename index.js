@@ -1,19 +1,18 @@
 #! /usr/bin/env node
 
-const got = require('got');
-const jsdom = require("jsdom");
-const { JSDOM } = jsdom;
 const https = require('https');
 const fs = require('fs');
 const yargs = require('yargs');
 const prompts = require('prompts');
 const chalk = require('chalk');
 const progress = require('request-progress');
-cliProgress = require('cli-progress');
+const cliProgress = require('cli-progress');
 const cp = require('child_process')
 const vlcCommand = require('vlc-command')
 
-const BASE_URL = 'https://gogoanime.so';
+const MetaData = require('./models/MetaData')
+const Anime = require('./models/Anime')
+const gogo_scraper = require('./utils/gogo_scraper');
 
 
 yargs.scriptName("gogo-dl")
@@ -25,7 +24,7 @@ yargs.scriptName("gogo-dl")
             describe: 'title of the anime'
         })
     }, async function (argv) {
-        await prompter(argv.title, 'dl')
+        await askForShow(argv.title, 'dl')
     })
     .command('watch [title]', 'stream the anime through a media player(VLC)', (yargs) => {
         yargs.positional('title', {
@@ -34,14 +33,20 @@ yargs.scriptName("gogo-dl")
             describe: 'title of the anime'
         })
     }, async function (argv) {
-        await prompter(argv.title, 'watch')
+        await askForShow(argv.title, 'watch')
     })
     .help()
     .argv
 
-async function prompter(title, type){
+async function askForShow(title, type){
 
-    let options = await search(title)
+    let options = await gogo_scraper.search( title)
+
+    if(options === null || options === undefined ||options === [])
+    {
+        console.log(chalk.redBright('no results found for ') + chalk.yellow('keyword'))
+        process.exit(0)
+    }
 
     let choices = {
         type: 'select',
@@ -59,6 +64,7 @@ async function prompter(title, type){
     console.log();
 
     const response = await prompts(choices);
+
     if(response.value === undefined)
         process.exit(0)
 
@@ -67,7 +73,8 @@ async function prompter(title, type){
 }
 async function execute(anime, type){
 
-    let meta = await getEpMetaData(anime.href)
+    let meta = await gogo_scraper.getEpMetaData( anime.href)
+
 
     console.log(`\nThere are ${chalk.magenta(meta.lastEpisode)} episodes`)
 
@@ -78,29 +85,36 @@ async function execute(anime, type){
     };
 
     let range = await prompts(options);
-    if(range.value === undefined)
-        process.exit(0)
     range = range.value
+
+    if(range === undefined)
+        process.exit(0)
+
+    range = getRangeFromString(range)
+    if(type === 'dl') {
+        console.log()
+        await dl(anime, range.lower, range.upper)
+    }
+
+    else if(type === 'watch')
+        await watch(anime, range.lower, range.upper)
+}
+
+function getRangeFromString(range)
+{
     let ind = range.indexOf('-')
     let lower = 1
     let upper = 1
 
-    if (ind === -1 || ind === undefined)
-    {
-        lower = Number(range.toString().trim())
-        upper = Number(range.toString().trim())
+    if (ind === undefined || ind === -1) {
+        lower = Number(range.trim())
+        upper = Number(range.trim())
     }
     else{
-        lower = Number(range.toString().substring(0, ind).trim())
-        upper = Number(range.toString().substring(ind+1).trim())
+        lower = Number(range.substring(0, ind).trim())
+        upper = Number(range.substring(ind+1).trim())
     }
-
-    if(type === 'dl') {
-        console.log()
-        await dl(anime, lower, upper)
-    }
-    else if(type === 'watch')
-        await watch(anime, lower, upper)
+    return {lower: lower, upper: upper}
 }
 
 async function dl(anime, lower, upper)
@@ -113,116 +127,56 @@ async function dl(anime, lower, upper)
 async function watch(anime, lower, upper)
 {
     console.log()
-    let urls = " "
+    let urls = []
     for(let i = lower; i <= upper; i++)
     {
-        let stream = await getVidStreamURL(anime.href, i)
-        let url = await getVideoSrc(stream)
-        urls += url + ' '
+        let stream = await gogo_scraper.getVidStreamURL(anime.href, i)
+        urls[i-lower] = await gogo_scraper.getVideoSrc(stream)
         console.log(chalk.green('fetched episode ' + i))
     }
 
+   await iina(urls)
+
+}
+
+async function iina(urls)
+{
+    let str = ''
+    urls.forEach(url => (str = str + url + ' '))
+    str = str.trim()
+    cp.exec('/Applications/IINA.app/Contents/MacOS/iina-cli --dequeue ' + str)
+}
+
+async function vlc(urls)
+{
+    let str = ''
+    urls.forEach(url => (str += url + ' '))
+    str = ' ' + str.trim()
     vlcCommand(function (err, cmd) {
         if (err) {
             console.log(chalk.redBright('could not find VLC command path make sure you have VLC installed with command line tools'))
             process.exit(1)
         }
         if (process.platform === 'win32') {
-            cp.execFile(cmd, [urls], function (err, stdout) {
+            cp.execFile(cmd, [str], function (err, stdout) {
                 if (err) return console.error(err)
                 console.log(stdout)
             })
         } else {
-            cp.exec(cmd + urls, function (err, stdout) {
+            cp.exec(cmd + str, function (err, stdout) {
                 if (err) return console.error(err)
                 console.log(stdout)
             })
         }
     })
-
 }
-
-async function getEpMetaData(href)
-{
-    let url = BASE_URL + href
-    return await got(url).then(response => {
-        const dom = new JSDOM(response.body);
-        let eplist = dom.window.document.getElementById('episode_page').children
-        let lastEp = eplist.item(eplist.length-1).getElementsByTagName('a').item(0).getAttribute('ep_end')
-        let ret = new MetaData(Number(lastEp))
-        return ret
-    }).catch(err => {
-        console.log(chalk.redBright('unable to get meta data'))
-        process.exit(1)
-    });
-}
-async function search(keyword)
-{
-
-    let searchURL = BASE_URL + "//search.html?keyword=" + keyword
-
-    return await got(searchURL).then(response => {
-        let results = []
-        const dom = new JSDOM(response.body)
-        let itemList = dom.window.document.getElementsByClassName('items')
-
-        let items = itemList.item(0).children
-
-        for(let i = 0; i < items.length; i++)
-        {
-            let href = (items.item(i).getElementsByClassName('name').item(0).getElementsByTagName('a').item(0).href)
-            let name = (items.item(i).getElementsByClassName('name').item(0).getElementsByTagName('a').item(0).title)
-            let img = (items.item(i).getElementsByClassName('img').item(0).getElementsByTagName('a').item(0).getElementsByTagName('img').item(0).src)
-            let released = (items.item(i).getElementsByClassName('released').item(0).textContent)
-            released = released.substring(released.indexOf(': ') + 2).trim()
-            results[i] = (new Anime(name, href, img, Number(released)))
-        }
-        return results
-    }).catch(err => {
-        console.log(chalk.redBright('no results found for ') + chalk.yellow(keyword))
-        process.exit(1)
-    });
-}
-
-async function getVidStreamURL(href, episode)
-{
-    let url = BASE_URL + '/' + href.substring(href.lastIndexOf('/')+1)+ "-episode-" + episode
-    return await got(url).then(response => {
-        const dom = new JSDOM(response.body);
-        let streamlink = dom.window.document.getElementsByClassName('vidcdn').item(0)
-            .getElementsByTagName('a').item(0).getAttribute('data-video');
-        return streamlink
-    }).catch(err => {
-        console.log(chalk.redBright('unable to find video URL'))
-        process.exit(1)
-    });
-
-}
-
-async function getVideoSrc(url) {
-    url = 'https://' + url
-    return await got(url).then(response => {
-        const dom = new JSDOM(response.body);
-        let script = dom.window.document.querySelector('body > div > div > script').textContent;
-        let index1 = script.indexOf('playerInstance.setup(')
-        let srcJSON = script.substring(index1+21, script.indexOf(');',index1))
-        let index2 = srcJSON.indexOf("file: '")
-        let srcURL = srcJSON.substring(index2+7, srcJSON.indexOf("',")).trim()
-        return srcURL
-    }).catch(err => {
-        console.log(chalk.redBright('unable to get video source'))
-        process.exit(1)
-    });
-}
-
 
 async function downloadVideo(anime, lower, upper) {
 
-    let stream = await getVidStreamURL(anime.href, lower)
-    let url = await getVideoSrc(stream)
+    let stream = await gogo_scraper.getVidStreamURL(anime.href, lower)
+    let url = await gogo_scraper.getVideoSrc(stream)
     name = anime.name.trim().replaceAll('/', '-').replaceAll(' ', '-') + '-episode-' + lower
     let dest = process.cwd()+"/"+ name + '.mp4'
-
 
     let file = fs.createWriteStream(dest);
 
@@ -233,11 +187,11 @@ async function downloadVideo(anime, lower, upper) {
 
     let totalBytes = 0
 
-    let request = https.get(url, function(response) {
+    let request = await https.get(url, async function(response) {
         totalBytes = response.headers['content-length'];
         progressBar.start(totalBytes, 0);
 
-        response.pipe(file);
+        await response.pipe(file);
         file.on('finish',  async function() {
             file.close();  // close() is async, call cb after close completes.
             await progressBar.update(totalBytes)
@@ -260,24 +214,5 @@ async function downloadVideo(anime, lower, upper) {
 }
 
 
-let Anime = class Anime{
-    constructor(name, href, img, released)
-    {
-        this.name = name
-        this.href = href
-        this.img = img
-        this.released = released
-    }
-}
-//TODO
-let MetaData = class MetaData{
-    constructor(lastEpisode, type, plotSummary, genre, released, status)
-    {
-        this.lastEpisode = lastEpisode
-        this.satus = status;
-        this.plotSummary = plotSummary
-        this.genre = genre
-        this.released = released
-    }
-}
+
 
