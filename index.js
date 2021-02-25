@@ -10,8 +10,6 @@ const cliProgress = require('cli-progress');
 const cp = require('child_process')
 const vlcCommand = require('vlc-command')
 
-const MetaData = require('./models/MetaData')
-const Anime = require('./models/Anime')
 const gogo_scraper = require('./utils/gogo_scraper');
 
 
@@ -135,16 +133,16 @@ async function watch(anime, lower, upper)
         console.log(chalk.green('fetched episode ' + i))
     }
 
-   await iina(urls)
+   await vlc(urls)
 
 }
-
+//TODO fix backwards episode playing
 async function iina(urls)
 {
     let str = ''
-    urls.forEach(url => (str = str + url + ' '))
+    urls.forEach(url => (str = url + ' ' + str + ' '))
     str = str.trim()
-    cp.exec('/Applications/IINA.app/Contents/MacOS/iina-cli --dequeue ' + str)
+    cp.exec('/Applications/IINA.app/Contents/MacOS/iina-cli --queue ' + str)
 }
 
 async function vlc(urls)

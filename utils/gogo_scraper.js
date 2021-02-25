@@ -1,10 +1,10 @@
-const Anime = require('/Users/naveengovindaraju/Developer/gogo-dl/models/Anime')
-const MetaData = require('/Users/naveengovindaraju/Developer/gogo-dl/models/MetaData')
+const Anime = require('../models/Anime')
+const MetaData = require('../models/MetaData')
 const got = require('got');
 const jsdom = require("jsdom");
 const { JSDOM } = jsdom;
 
-const BASE_URL = 'https://gogoanime.so';
+const BASE_URL = 'https://www2.gogoanime.sh';
 
 let gogo_scraper = {
 
@@ -77,7 +77,5 @@ let gogo_scraper = {
             process.exit(1)
         });
     }
-
-
 }
 module.exports = gogo_scraper
