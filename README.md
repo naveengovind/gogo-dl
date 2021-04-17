@@ -41,7 +41,11 @@ npm i gogo-dl -g
 *you can also enter a single episode
 - ex "14"
 
+<br/>
+
 ### gogo-dl dl [title]
+
+<br/>
 
 by choosing a show and an episode range you want to watch, gogo-dl will launch VLC, and the show will start downloading
 
@@ -49,7 +53,11 @@ by choosing a show and an episode range you want to watch, gogo-dl will launch V
 
 #### downloads the episodes to the path you are currently in
 
+<br/>
+
 ### gogo-dl watch [title]
+
+<br/>
 
 by choosing a show and an episode range you want to watch, gogo-dl will launch VLC, and the show will start playing
 
@@ -57,19 +65,34 @@ by choosing a show and an episode range you want to watch, gogo-dl will launch V
 
 #### fetches all the episodes and adds them in a queue into your media player(VLC)
 
+<br/>
+
 ### gogo-dl add [title]
+
+<br/>
+
 by choosing a show, gogo-dl will add it to a watch list that you can access it using the ```watch``` command
 
 <img src = "https://raw.githubusercontent.com/naveengovind/gogo-dl/main/exampleImages/Screen%20Shot%202021-04-17%20at%2011.41.46%20AM.png" align="center">
 
 #### stores the shows in a JSON file in your home directory
 
+<br/>
+
 ### gogo-dl list [title] + flag [-w] or [-d]
+
+<br/>
+
 choose a show from your watch list and an episode range that you want to download[```-d```] or watch[```-w```] depending on the flag in your command (default is download) 
 
 <img src = "https://raw.githubusercontent.com/naveengovind/gogo-dl/main/exampleImages/Screen%20Shot%202021-04-17%20at%2011.40.45%20AM.png" align="center">
 
+<br/>
+
 ### gogo-dl remove [title]
+
+<br/>
+
 this command lets you choose a show from your watch list and remove it
 
 <img src = "https://raw.githubusercontent.com/naveengovind/gogo-dl/main/exampleImages/Screen%20Shot%202021-04-17%20at%2012.57.48%20PM.png" align="center">
