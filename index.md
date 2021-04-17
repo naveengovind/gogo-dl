@@ -8,10 +8,10 @@
 
 ## Requirements
 - NodeJS 
-	- install at https://nodejs.org/en/
+	- install at [https://nodejs.org/en/](https://nodejs.org/en/)
 
 - VLC (optional, required for streaming)
-	- download vlc at https://www.videolan.org/vlc/
+	- download vlc at [https://www.videolan.org/vlc/](https://www.videolan.org/vlc/)
 
 ## Install
 
@@ -26,7 +26,7 @@ npm i gogo-dl -g
 - Batch downloads
 - Fast searching
 - Streaming using VLC
-	- download VLC at https://www.videolan.org/vlc/
+	- download VLC at [https://www.videolan.org/vlc/](https://www.videolan.org/vlc/)
 - Support for SUB and DUB anime
 - Watch List [<mark>NEW</mark>]
 
