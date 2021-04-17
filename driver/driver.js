@@ -49,7 +49,7 @@ let driver = {
         if(response.value === undefined)
             process.exit(0)
 
-        else if(type === 'watchList') {
+        else if(type === 'add') {
             await watchList.newShow(options[response.value])
         }
         else if(type === 'remove') {

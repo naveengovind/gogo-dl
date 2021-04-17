@@ -1,6 +1,6 @@
 {
   "name": "gogo-dl",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "license": "(MIT OR Apache-2.0)",
   "dependencies": {
     "chalk": "^4.1.0",
@@ -28,10 +28,12 @@
     "gogoanime",
     "anime-downloader",
     "anime",
+    "anime-dl",
     "gogo",
     "gogoanime-downloader",
     "twist.moe",
     "gogoanime.so",
+    "gogoanime.ai",
     "moe"
   ]
 }
