@@ -1,31 +1,38 @@
 
-
 <h1 align="center">gogo-dl</h1>
 <p align="center">
-  <b> Powerful, lightweight user-friendly tool for downloading anime.</b>
+  <b> Powerful, lightweight, user-friendly tool for downloading anime.</b>
 </p>
 
-<img src = "https://github.com/naveengovind/gogo-dl/blob/main/exampleImages/Screen%20Shot%202021-02-02%20at%206.44.33%20PM.png?raw=true" align="center"> </img>
+<img src = "https://github.com/naveengovind/gogo-dl/blob/main/exampleImages/Screen%20Shot%202021-02-02%20at%206.44.33%20PM.png?raw=true" align="center">
 
+## Requirements
+- NodeJS 
+	- install at https://nodejs.org/en/
+
+- VLC (optional, required for streaming)
+	- download vlc at https://www.videolan.org/vlc/
 
 ## Install
 
-Linux, Windows, MacOS
+Linux, Windows, macOS
 ```
 npm i gogo-dl -g
 ```
 ## Features
 
 - Full quality downloads
-- Fast mirrors for streaming and downloading
+- Fast high-quality mirrors for streaming and downloading
 - Batch downloads
 - Fast searching
-- Streaming using VLC (mpv, IINA: coming soon)
-- Support for DUB and SUB anime
+- Streaming using VLC
+	- download VLC at https://www.videolan.org/vlc/
+- Support for SUB and DUB anime
+- Watch List [<mark>NEW</mark>]
 
 ## Usage
 
-#### gogo-dl has two sub commands ``` dl``` , and ```watch```
+#### gogo-dl has five sub commands ``` dl``` , ```watch```, ```list```,  ```add```,  ```remove```
 
 *episode range should be entered "[start]-[end]"
 * ex:  "13-40"
@@ -36,20 +43,41 @@ npm i gogo-dl -g
 
 ### gogo-dl dl [title]
 
+by choosing a show and an episode range you want to watch, gogo-dl will launch VLC, and the show will start downloading
+
 <img src = "https://github.com/naveengovind/gogo-dl/blob/main/exampleImages/Screen%20Shot%202021-02-02%20at%206.44.07%20PM.png?raw=true" align="center"> </img>
 
 #### downloads the episodes to the path you are currently in
 
 ### gogo-dl watch [title]
 
-<img src = "https://github.com/naveengovind/gogo-dl/blob/main/exampleImages/Screen%20Shot%202021-02-02%20at%206.42.39%20PM.png?raw=true" align="center"> </img>
+by choosing a show and an episode range you want to watch, gogo-dl will launch VLC, and the show will start playing
+
+<img src = "https://github.com/naveengovind/gogo-dl/blob/main/exampleImages/Screen%20Shot%202021-02-02%20at%206.42.39%20PM.png?raw=true" align="center">
 
 #### fetches all the episodes and adds them in a queue into your media player(VLC)
+
+### gogo-dl add [title]
+by choosing a show, gogo-dl will add it to a watch list that you can access it using the ```watch``` command
+
+<img src = "https://raw.githubusercontent.com/naveengovind/gogo-dl/main/exampleImages/Screen%20Shot%202021-04-17%20at%2011.41.46%20AM.png" align="center">
+
+#### stores the shows in a JSON file in your home directory
+
+### gogo-dl list [title] + flag [-w] or [-d]
+choose a show from your watch list and an episode range that you want to download[```-d```] or watch[```-w```] depending on the flag in your command (default is download) 
+
+<img src = "https://raw.githubusercontent.com/naveengovind/gogo-dl/main/exampleImages/Screen%20Shot%202021-04-17%20at%2011.40.45%20AM.png" align="center">
+
+### gogo-dl remove [title]
+this command lets you choose a show from your watch list and remove it
+
+<img src = "https://raw.githubusercontent.com/naveengovind/gogo-dl/main/exampleImages/Screen%20Shot%202021-04-17%20at%2012.57.48%20PM.png" align="center">
 
 ## Disclaimer
 
 ```
-gogo-dl was not developed for pirating anime but educational and private usage.
+gogo-dl was not developed for pirating anime but for educational usage.
 
 It may be illegal to use this in your country,
 
