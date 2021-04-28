@@ -1,0 +1,22 @@
+{
+  "files": {
+    "app.js": "/gogo-dl/static/js/app.301d4e6e.chunk.js",
+    "app.js.map": "/gogo-dl/static/js/app.301d4e6e.chunk.js.map",
+    "runtime~app.js": "/gogo-dl/static/js/runtime~app.01cfaf18.js",
+    "runtime~app.js.map": "/gogo-dl/static/js/runtime~app.01cfaf18.js.map",
+    "static/js/2.ba3ca9be.chunk.js": "/gogo-dl/static/js/2.ba3ca9be.chunk.js",
+    "static/js/2.ba3ca9be.chunk.js.map": "/gogo-dl/static/js/2.ba3ca9be.chunk.js.map",
+    "favicon-16.png": "/gogo-dl/favicon-16.png",
+    "favicon-32.png": "/gogo-dl/favicon-32.png",
+    "favicon.ico": "/gogo-dl/favicon.ico",
+    "index.html": "/gogo-dl/index.html",
+    "manifest.json": "/gogo-dl/manifest.json",
+    "serve.json": "/gogo-dl/serve.json",
+    "static/js/2.ba3ca9be.chunk.js.LICENSE.txt": "/gogo-dl/static/js/2.ba3ca9be.chunk.js.LICENSE.txt"
+  },
+  "entrypoints": [
+    "static/js/runtime~app.01cfaf18.js",
+    "static/js/2.ba3ca9be.chunk.js",
+    "static/js/app.301d4e6e.chunk.js"
+  ]
+}
