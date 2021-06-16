@@ -1,35 +1,40 @@
-const prompts = require("prompts");
+import prompts = require("prompts");
 const chalk = require("chalk");
-const gogo_scraper = require("../utils/gogo_scraper");
-const downloader = require("../commands/dl");
-const watch = require("../commands/watch");
-const watchList = require("../commands/watchList")
-const nconf  = require('nconf');
-const util = require("../utils/utils");
+import {dl as downloader} from "../commands/dl";
+import {watch} from "../commands/watch";
+import {watchList} from "../commands/watchList"
+import nconf  = require('nconf');
+import {utils} from "../utils/utils";
+import {Anime} from "../models/Anime";
+import {PromptObject} from "prompts";
+import Gogoanime from "../sites/Gogoanime";
+import site from "../sites/site";
 
-let driver = {
+let t_site: site = new Gogoanime()
 
-   askForShow: async function (title, type){
-       let options;
+export let driver = {
+
+   askForShow: async function (title: string, type: string, player:string){
+
+       let options: Array<Anime>;
         if(type !== 'list' && type !== 'remove') {
-            options = await gogo_scraper.search(title)
-
+            options = await t_site.search(title)
             if (options === null || options === undefined || options === []) {
                 console.log(chalk.redBright('no results found for ') + chalk.yellow('keyword'))
                 process.exit(0)
             }
         }else{
             try{
-                nconf.use('file', {file: util.getConfigPath()});
+                nconf.use('file', {file: utils.getConfigPath()});
                 nconf.load();
             }catch (e) {
-                await util.recreateConfig()
+                await utils.recreateConfig()
             }
             options = nconf.get('shows');
             if(type === 'list')
                 type = title
         }
-        let choices = {
+        let choices: PromptObject = {
             type: 'select',
             name: 'value',
             message: 'Pick a show',
@@ -39,8 +44,9 @@ let driver = {
             initial: 0,
         };
 
-        for (let i = 0; i < options.length; i++)
-            choices.choices.push({title: options[i].name, description: ''+options[i].released, value: i})
+        for (let i = 0; i < options.length; i++) {
+            choices!.choices!.push({title: options[i].name, description: '' + options[i].released, value: i})
+        }
 
         console.log();
 
@@ -56,43 +62,43 @@ let driver = {
             await watchList.removeShow(options[response.value])
         }
         else {
-            await driver.execute(options[response.value], type)
+            await driver.execute(options[response.value], type, player)
         }
 
     },
-     execute: async function(anime, type){
+     execute: async function(anime:Anime, type: string, player:string){
 
-        let meta = await gogo_scraper.getEpMetaData(anime.href)
+        let meta = await t_site.getAnimeMetaData(anime.href)
 
         console.log(`\nThere are ${chalk.magenta(meta.lastEpisode)} episodes`)
 
-        let options = {
+        let options: PromptObject = {
             type: 'text',
             name: 'value',
             message: `Episode range [1-${meta.lastEpisode}]`
         };
 
         let range = await prompts(options);
-        range = range.value
+        let rangeStr: string = range.value
 
-        if(range === undefined)
-            process.exit(0)
+       /* if(range === undefined)
+            process.exit(0)*/
 
-        range = this.getRangeFromString(range)
+        let rangeNum: {lower: number, upper: number} = this.getRangeFromString(rangeStr)
 
          if(type === 'dl') {
             console.log()
-            await downloader.download(anime, range.lower, range.upper)
+            await downloader.download(anime, rangeNum.lower, rangeNum.upper)
         }
         else if(type === 'watch')
-            await watch.watch(anime, range.lower, range.upper)
+            await watch.watch(anime, rangeNum.lower, rangeNum.upper, player)
     },
 
-    getRangeFromString: function(range)
+    getRangeFromString: function(range: string): {lower: number, upper: number}
     {
         let ind = range.indexOf('-')
-        let lower = 1
-        let upper = 1
+        let lower: number
+        let upper : number
 
         if (ind === undefined || ind === -1) {
             lower = Number(range.trim())
@@ -106,4 +112,3 @@ let driver = {
     },
 
 }
-module.exports = driver
