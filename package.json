@@ -3,14 +3,15 @@
   "version": "3.0.0",
   "license": "(MIT OR Apache-2.0)",
   "dependencies": {
+    "@types/node-ipc": "^9.1.4",
     "aria2": "^4.1.2",
     "chalk": "^4.1.0",
     "cli-progress": "^3.9.0",
+    "command-exists": "^1.2.9",
     "got": "^11.8.2",
-    "jikants": "^1.2.13",
-    "js-file-downloader": "^1.1.20",
     "jsdom": "^16.5.3",
     "nconf": "^0.11.2",
+    "node-ipc": "^9.1.4",
     "node-libcurl": "^2.3.3",
     "node-mpv": "^2.0.0-beta.2",
     "prompts": "^2.4.1",
@@ -33,7 +34,7 @@
     "dev": "ts-node ./src/index.ts list"
   },
   "bin": {
-    "gogo-dl": "./dist/index.js"
+    "gogo": "./dist/index.js"
   },
   "repository": {
     "type": "git",

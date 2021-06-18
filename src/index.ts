@@ -4,6 +4,7 @@ import * as yargs from "yargs"
 import {driver} from "./driver/driver";
 import {Argv} from "yargs";
 
+
 interface Arguments {
     title: string
     w: boolean
@@ -42,15 +43,17 @@ function main() {
                 'vlc': {
                     alias: 'v',
                     type: 'boolean',
-                    default: true,
+                    default: false,
                     description: 'use vlc'
                 }
             })
         }, async function (argv: Arguments) {
             if(argv.mpv)
                 await driver.askForShow(argv.title, 'watch', 'mpv')
-            else
+            else if(argv.vlc)
                 await driver.askForShow(argv.title, 'watch', 'vlc')
+            else
+                await driver.askForShow(argv.title, 'watch', undefined)
         })
 
         .command('list', 'open your watch list', (yargs:Argv<Arguments>) => {
@@ -107,9 +110,8 @@ function main() {
 
         }, async function (argv : Arguments) {
             await driver.askForShow(argv.title, 'remove', '')
-        })
-
-        .help()
+        }).showHelpOnFail(true)
+        .demandCommand(1, '')
         .argv
 }
 

@@ -1,7 +1,7 @@
 import {Anime} from "../models/Anime";
 import nconf  = require('nconf');
 const chalk = require('chalk');
-import {utils} from '../utils/utils'
+const utils = require('../utils/utils').utils
 
 export let watchList = {
      async newShow(anime: Anime) {

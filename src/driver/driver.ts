@@ -4,17 +4,18 @@ import {dl as downloader} from "../commands/dl";
 import {watch} from "../commands/watch";
 import {watchList} from "../commands/watchList"
 import nconf  = require('nconf');
-import {utils} from "../utils/utils";
+const utils = require('../utils/utils').utils
 import {Anime} from "../models/Anime";
 import {PromptObject} from "prompts";
 import Gogoanime from "../sites/Gogoanime";
+import FourAnime from "../sites/4anime";
 import site from "../sites/site";
 
 let t_site: site = new Gogoanime()
 
 export let driver = {
 
-   askForShow: async function (title: string, type: string, player:string){
+   askForShow: async function (title: string, type: string, player:string | undefined){
 
        let options: Array<Anime>;
         if(type !== 'list' && type !== 'remove') {
@@ -44,7 +45,7 @@ export let driver = {
             initial: 0,
         };
 
-        for (let i = 0; i < options.length; i++) {
+        for (let i = 0; i < options!.length; i++) {
             choices!.choices!.push({title: options[i].name, description: '' + options[i].released, value: i})
         }
 
@@ -66,7 +67,7 @@ export let driver = {
         }
 
     },
-     execute: async function(anime:Anime, type: string, player:string){
+     execute: async function(anime:Anime, type: string, player:string | undefined){
 
         let meta = await t_site.getAnimeMetaData(anime.href)
 

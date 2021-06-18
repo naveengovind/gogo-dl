@@ -7,7 +7,7 @@ import site from "./site";
 
 const BASE_URL = 'https://www2.gogoanime.sh';
 
-export default class gogoanime implements site{
+export default class Gogoanime implements site{
 
     async getAnimeMetaData(href: string): Promise<MetaData>
     {
@@ -15,15 +15,21 @@ export default class gogoanime implements site{
         return await got(url).then(response => {
             const dom = new JSDOM(response.body);
             let epList: HTMLCollection = dom.window.document.getElementById('episode_page')!.children
-            let lastEp: string | null = epList.item(epList.length - 1)!.getElementsByTagName('a').item(0)!.getAttribute('ep_end')
-            return new MetaData(Number(lastEp))
+            let lastEp: string = epList.item(epList.length - 1)!.getElementsByTagName('a').item(0)!.getAttribute('ep_end')!
+            return new MetaData(parseInt(lastEp))
         }).catch(() => {
             return new MetaData()
         });
     }
 
+    private static getElem(i:number, items: HTMLCollection, className:string): HTMLAnchorElement
+    {
+        return items.item(i)!.getElementsByClassName(className).item(0)!.getElementsByTagName('a').item(0)!
+    }
+
     async search(keyword: string): Promise<Array<Anime>>
     {
+
         let searchURL: string = BASE_URL + "//search.html?keyword=" + keyword
 
         return await got(searchURL).then(response => {
@@ -35,12 +41,13 @@ export default class gogoanime implements site{
 
             for(let i:number = 0; i < items.length; i++)
             {
-                let href = (items.item(i)!.getElementsByClassName('name').item(0)!.getElementsByTagName('a').item(0)!.href)
-                let name = (items.item(i)!.getElementsByClassName('name').item(0)!.getElementsByTagName('a').item(0)!.title)
-                let img = (items.item(i)!.getElementsByClassName('img').item(0)!.getElementsByTagName('a').item(0)!.getElementsByTagName('img').item(0)!.src)
+
+                let href = Gogoanime.getElem(i, items, 'name').href
+                let name = Gogoanime.getElem(i, items, 'name').title
+                let img = Gogoanime.getElem(i, items, 'img').getElementsByTagName('img').item(0)!.src
                 let released = (items.item(i)!.getElementsByClassName('released').item(0)!.textContent)
                 released = released!.substring(released!.indexOf(': ') + 2).trim()
-                results[i] = (new Anime(name, href, img, Number(released)))
+                results[i] = (new Anime(name, href, img, parseInt(released)))
             }
             return results
         }).catch(() => {

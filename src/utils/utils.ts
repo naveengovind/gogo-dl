@@ -1,7 +1,6 @@
 import prompts =  require("prompts");
 import fs = require("fs");
 const chalk = require("chalk");
-import JikanTS from "jikants";
 const path = require('path')
 import got from 'got';
 export let utils = {
@@ -22,19 +21,22 @@ export let utils = {
             inactive: 'no'
         });
         if(response.value)
-            fs.unlinkSync(utils.getConfigPath())
+            fs.rmSync(utils.getConfigPath())
         process.exit(0)
     },
-    getConfigPath(): string{
-        return path.join(require('os').homedir(), '.gogoConfig.json')
-    },
 
-    async search(query: string): Promise<Array<string>>{
-        let ret: Array<string> = []
-        let results = (await JikanTS.Search.search(query, "anime", 1, { limit: 5 }))!.results
-        results!.forEach(function (result) {
-            ret.push(result.title)
-        })
-        return ret
-    }
+    getConfigPath(): string{
+        let conf: string
+        if(process.platform.startsWith('win'))
+            conf =  path.join(require('os').homedir(), 'AppData', 'Roaming', 'gogo-dl', 'config.json')
+        else
+             conf = path.join(require('os').homedir(),'.config','gogo-dl','config.json')
+        if(fs.existsSync(conf)){
+            return conf
+        }else{
+            fs.mkdirSync(path.dirname(conf), { recursive: true })
+            fs.writeFileSync(conf, '{}')
+            return conf
+        }
+    },
 }
