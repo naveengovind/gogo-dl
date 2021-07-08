@@ -11,11 +11,10 @@ import site from "../sites/site";
 import MyAnimeList, {STATUS} from "../utils/mal_utils";
 import got from "got";
 import ConfigFile from "../utils/ConfigFile";
-import GogoanimePup from "../sites/Gogoanime-pup";
 import NineAnime from "../sites/9anime";
 const SUPPORTED_SITES = ['Gogoanime','9anime']
 let t_site = new Map<string,site>()
-t_site.set("Gogoanime", new GogoanimePup())
+t_site.set("Gogoanime", new Gogoanime())
 t_site.set("9anime", new NineAnime())
 
 let mal = new MyAnimeList("00d2c5d06cc8ec154ddd8c8c22ace667")
@@ -34,24 +33,35 @@ export let driver = {
                     for (const site of Object.keys(res['Sites']))
                     {
                         let slug_keys = Object.keys(res['Sites'][site])
-                        if (slug_keys.length > 1)
-                        {
-                            if (res['Sites'][site][slug_keys[0]]['url'].toLowerCase().indexOf('dub') > res['Sites'][site][slug_keys[1]]['url'].toLowerCase().indexOf('dub'))
+                        let ind_subs = {dub:undefined, sub:undefined, uncen:undefined}
+                        if(site === 'Gogoanime'){
+                            for(const key of slug_keys)
                             {
-                                sites.set(site, {
-                                    sub: res['Sites'][site][slug_keys[1]]['url'],
-                                    dub: res['Sites'][site][slug_keys[0]]['url']
-                                })
-                            } else
-                            {
-                                sites.set(site, {
-                                    sub: res['Sites'][site][slug_keys[0]]['url'],
-                                    dub: res['Sites'][site][slug_keys[1]]['url']
-                                })
+                                if(key.toLowerCase().endsWith('-uncensored')){
+                                    ind_subs.uncen = res['Sites'][site][key]['url']
+                                }else if(key.toLowerCase().endsWith('-dub')){
+                                    ind_subs.dub = res['Sites'][site][key]['url']
+                                }else{
+                                    ind_subs.sub = res['Sites'][site][key]['url']
+                                }
                             }
+                        }else
+                        {
+                            if (slug_keys.length == 2)
+                            {
+                                if (res['Sites'][site][slug_keys[0]]['url'].toLowerCase().lastIndexOf('dub') > res['Sites'][site][slug_keys[1]]['url'].toLowerCase().lastIndexOf('dub'))
+                                {
+                                    ind_subs.dub = res['Sites'][site][slug_keys[0]]['url']
+                                    ind_subs.sub = res['Sites'][site][slug_keys[1]]['url']
+                                } else
+                                {
+                                    ind_subs.dub = res['Sites'][site][slug_keys[1]]['url']
+                                    ind_subs.sub = res['Sites'][site][slug_keys[0]]['url']
+                                }
+                            }else
+                                ind_subs.sub = res['Sites'][site][slug_keys[0]]['url']
                         }
-                        else if (slug_keys.length == 1)
-                            sites.set(site, {sub: res['Sites'][site][slug_keys[0]]['url'], dub: undefined})
+                        sites.set(site,ind_subs)
                     }
                     return sites
                 }else
@@ -70,7 +80,7 @@ export let driver = {
         {
             let i = 0
             for(const anime of await mal.search(title, {limit:15})){
-                if(i >= 10)
+                if(i >= 7)
                     break
                 let opts = await this.mapIDToList(anime.node.id)
                 if(opts.size > 0){
@@ -133,26 +143,49 @@ export let driver = {
     execute: async function (anime: Anime, type: string, player: string | undefined)
     {
         let rangeNum: { lower: number, upper: number }
-        const intersected = Array.from(anime.href.keys()).filter(value => SUPPORTED_SITES.includes(value));
+        const intersected = Array.from(anime.href.keys()).filter(value => SUPPORTED_SITES.includes(value)).sort();
         let meta;
-        let url = ''
-        if(anime.href.get(intersected[0])!.dub !== undefined)
+        let default_src = intersected[0]
+        if(intersected.includes('Gogoanime'))
+            default_src = 'Gogoanime'
+        let watch_type = ''
+        if(anime.href.get(default_src)!.dub !== undefined || anime.href.get(default_src)!.uncen !== undefined)
         {
-            const response = await prompts({
-                type: 'toggle',
+            let options: PromptObject = {
+                type: 'select',
                 name: 'value',
-                message: 'sub or dub?',
-                initial: true,
-                active: 'sub',
-                inactive: 'dub'
-            });
-            if (response.value)
-                url = anime.href.get(intersected[0])!.sub
+                message: 'Pick an option',
+                choices: [
+                    {title: 'Subbed', value: 'sub'},
+                ],
+                initial: 0
+            }
+
+            if (anime.href.get(default_src)!.dub !== undefined)
+                options.choices?.push({title: 'Dubbed', value: 'dub'})
+
+            if (anime.href.get(default_src)!.uncen !== undefined)
+                options.choices?.push({title: 'Uncensored', value: 'uncen'})
+
+            const response = await prompts(options);
+
+            if (response.value === 'uncen')
+                watch_type = 'uncen'
+            else if (response.value ==='dub')
+                watch_type = 'dub'
             else
-                url = anime.href.get(intersected[0])!.dub
-        }else
-            url = anime.href.get(intersected[0])!.sub
-        meta = await t_site.get(intersected[0])!.getMetaData(url)
+                watch_type = 'sub'
+        }
+        else
+            watch_type = 'sub'
+
+        if (watch_type === 'uncen')
+            meta = await t_site.get(default_src)!.getMetaData(anime.href.get(default_src)!.uncen)
+        else if (watch_type ==='dub')
+            meta = await t_site.get(default_src)!.getMetaData(anime.href.get(default_src)!.dub)
+        else
+            meta = await t_site.get(default_src)!.getMetaData(anime.href.get(default_src)!.sub)
+
         if (meta.lastEpisode !== 1)
         {
             console.log(`\nThere are ${chalk.magenta(meta.lastEpisode)} episodes`)
@@ -172,16 +205,19 @@ export let driver = {
             {
                 rangeNum = {lower:rangeNum.upper, upper:rangeNum.lower}
             }
-        }else{
+        }else if(meta.lastEpisode > 0){
              rangeNum = {lower:1, upper:1}
+        }else{
+            console.log(chalk.redBright('no episodes available'))
+            process.exit(0)
         }
+
         if (type === 'dl')
         {
-            console.log()
-            await downloader.download({href: url, name: anime.name}, rangeNum.lower, rangeNum.upper)
+            await downloader.download(anime, rangeNum.lower, rangeNum.upper, watch_type)
         } else if (type === 'watch')
         {
-            await watch.watch({href: url, name: anime.name}, rangeNum.lower, rangeNum.upper, player)
+            await watch.watch(anime, rangeNum.lower, rangeNum.upper, player, watch_type)
         }
     },
 
@@ -202,5 +238,46 @@ export let driver = {
         }
         return {lower: lower, upper: upper}
     },
+    getOptimizedPlayer: async function (anime: Anime, ep:number, type:string): Promise<string | undefined>{
+        if(anime.href.get('Gogoanime')!== undefined){
+            let temp: string | undefined
+            let src: string = ''
+            let back_up: string = ''
+            for(const server of ['vidcdn', 'anime','xstreamcdn', 'streamtape'])
+            {
+                if (src === '' || src.endsWith('.m3u8'))
+                {
+                    temp = (await this.getUrl(anime, ep, type, "Gogoanime", server))
+                    if (temp !== undefined)
+                    {
+                        back_up = temp!
+                        if(!temp.endsWith('.m3u8')){
+                            src = temp!
+                        }
+                    }
+                }
+            }
+            if(src !== '')
+                return src!
 
+            else if(anime.href.get('9anime') !== undefined){
+                temp = (await this.getUrl(anime, ep, type, "9anime", ''))
+                if (temp !== undefined)
+                {
+                    return temp!
+                }
+            }
+            return back_up!
+        }
+
+    },
+    getUrl: async function (anime: Anime, ep:number, type:string, src:string, server:string): Promise<string | undefined> {
+        if (type === 'uncen' && anime.href.get(src)!.uncen !== undefined)
+            return await t_site.get(src)!.getVideoSrc(anime.href.get(src)!.uncen, ep, server)
+        else if (type ==='dub' && anime.href.get(src)!.dub !== undefined)
+            return await t_site.get(src)!.getVideoSrc(anime.href.get(src)!.dub, ep, server)
+        else if(type ==='sub')
+            return await t_site.get(src)!.getVideoSrc(anime.href.get(src)!.sub, ep, server)
+        return undefined
+    }
 }

@@ -9,7 +9,11 @@ import puppeteer from "puppeteer";
 import UserAgent from 'user-agents';
 const BASE_URL = 'https://9anime.pw';
 
-export default class NineAnime implements site{
+export default class NineAnime extends site{
+    constructor()
+    {
+        super(BASE_URL);
+    }
 
     async getMetaData(href: string): Promise<MetaData>
     {
@@ -32,7 +36,7 @@ export default class NineAnime implements site{
                         temp = await response.json()
                         let dom = new JSDOM(temp['html'])
                         let last = dom.window.document.getElementsByTagName('a')
-                        lastEp = parseInt(last.item(last.length - 1)!.textContent!)
+                        lastEp = parseInt(last.item(last.length - 1)!.textContent!.replace('-Uncen',''))
                         resolve(new MetaData(lastEp))
                         await browser.close();
 
@@ -48,8 +52,11 @@ export default class NineAnime implements site{
         })
     }
 
-    async getVideoSrc(href: string, episode: number): Promise<string> {
-        let temp: any = ''
+    async getVideoSrc(href: string, episode: number, server:string=''): Promise<string|undefined> {
+        if(href === undefined){
+            return undefined
+        }
+        let temp: any = undefined
         const myURL = new URL(href);
         let url:string = BASE_URL + href.replace(myURL.origin, '') + '/ep-'+episode
         const browser = await puppeteer.launch();
@@ -64,8 +71,8 @@ export default class NineAnime implements site{
                 {
                     if (response.url().indexOf('vidstream.pro/info/') > 0)
                     {
-                        temp = await response.json()
-                        resolve(temp['media']['sources'][0]['file'])
+                        temp = (await response.json())['media']['sources'][0]['file']
+                        resolve(temp)
                         await browser.close();
                     }
                 });
@@ -74,12 +81,8 @@ export default class NineAnime implements site{
                 await browser.close();
             }catch (e)
             {
-                resolve(temp['media']['sources'][0]['file'])
+                resolve(temp)
             }
         })
-    }
-
-    async slugExists(href:string){
-        return utils.ping(BASE_URL + '/anime/'+href)
     }
 }

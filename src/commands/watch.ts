@@ -8,8 +8,8 @@ import Gogoanime from "../sites/Gogoanime";
 import FourAnime from "../sites/4anime";
 import nconf = require('nconf');
 import {utils} from "../utils/utils";
-import GogoanimePup from "../sites/Gogoanime-pup";
 import NineAnime from "../sites/9anime";
+import {driver} from "../driver/driver";
 
 export let watch = {
     getPlayer: function (player: string | undefined): string
@@ -38,14 +38,13 @@ export let watch = {
             return 'vlc'
         }
     },
-    watch: async function (anime: { name:string, href:string }, lower:number, upper:number, player:string | undefined)
+    watch: async function (anime: Anime, lower:number, upper:number, player:string | undefined, type:string)
     {
-        let t_site: site = new NineAnime()
         let videoPlayer: VideoPlayer;
         for (let i: number = lower; i <= upper; i++) {
             console.log(chalk.gray('fetching episode ' + i + ' ...'))
-            let stream = await t_site.getVideoSrc(anime.href, i)
-            if (stream != null) {
+            let stream = await driver.getOptimizedPlayer(anime, i, type)
+            if (stream !== null && stream !== undefined && stream !== '') {
                 if (i === lower) {
                     player = this.getPlayer(player)
                     if(player === 'vlc')

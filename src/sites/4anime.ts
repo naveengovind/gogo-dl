@@ -8,8 +8,11 @@ import {utils} from "../utils/utils";
 
 const BASE_URL = 'https://4anime.to';
 
-export default class FourAnime implements site{
-
+export default class FourAnime extends site{
+    constructor()
+    {
+        super(BASE_URL);
+    }
     async getMetaData(href: string): Promise<MetaData>
     {
         return await got(href).then(response => {
@@ -46,7 +49,7 @@ export default class FourAnime implements site{
         });
     }
 */
-    async getVideoSrc(href: string, episode: number): Promise<string> {
+    async getVideoSrc(href: string, episode: number, server:string = ''): Promise<string> {
         let sepisode = ''
         if((episode+'').length == 1){
             sepisode = '0'+episode
@@ -62,7 +65,5 @@ export default class FourAnime implements site{
             return ''
         });
     }
-    async slugExists(href:string){
-        return utils.ping(BASE_URL + '/anime/'+href)
-    }
+
 }

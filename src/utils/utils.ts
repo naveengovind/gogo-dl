@@ -18,11 +18,6 @@ export let utils = {
         return file
     },
 
-    async ping(url:string): Promise<boolean>{
-        return await got(url).then(response => {
-            return response.statusCode === 200;
-        })
-   },
     async recreateConfig(){
         console.log(chalk.red('unable to open watch list file or file may be corrupt'));
         const response = await prompts({
