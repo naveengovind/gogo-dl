@@ -1,17 +1,19 @@
 import {Anime} from '../models/Anime'
-import chalk from 'chalk';
+const chalk = require('chalk');
 import got from 'got';
 import {JSDOM} from "jsdom";
 import {MetaData} from "../models/MetaData";
 import site from "./site";
+import {utils} from "../utils/utils";
 
-const BASE_URL = 'https://www2.gogoanime.sh';
+const BASE_URL = 'https://gogoanime.vc';
 
 export default class Gogoanime implements site{
 
-    async getAnimeMetaData(href: string): Promise<MetaData>
+    async getMetaData(slug: string): Promise<MetaData>
     {
-        let url = BASE_URL + href
+        const myURL = new URL(slug);
+        let url = BASE_URL + slug.replace(myURL.origin, '')
         return await got(url).then(response => {
             const dom = new JSDOM(response.body);
             let epList: HTMLCollection = dom.window.document.getElementById('episode_page')!.children
@@ -22,12 +24,12 @@ export default class Gogoanime implements site{
         });
     }
 
-    private static getElem(i:number, items: HTMLCollection, className:string): HTMLAnchorElement
+   /* private static getElem(i:number, items: HTMLCollection, className:string): HTMLAnchorElement
     {
         return items.item(i)!.getElementsByClassName(className).item(0)!.getElementsByTagName('a').item(0)!
     }
-
-    async search(keyword: string): Promise<Array<Anime>>
+*/
+    /*async search(keyword: string): Promise<Array<Anime>>
     {
 
         let searchURL: string = BASE_URL + "//search.html?keyword=" + keyword
@@ -41,38 +43,35 @@ export default class Gogoanime implements site{
 
             for(let i:number = 0; i < items.length; i++)
             {
-
-                let href = Gogoanime.getElem(i, items, 'name').href
+                let slug = Gogoanime.getElem(i, items, 'name').href
                 let name = Gogoanime.getElem(i, items, 'name').title
                 let img = Gogoanime.getElem(i, items, 'img').getElementsByTagName('img').item(0)!.src
                 let released = (items.item(i)!.getElementsByClassName('released').item(0)!.textContent)
                 released = released!.substring(released!.indexOf(': ') + 2).trim()
-                results[i] = (new Anime(name, href, img, parseInt(released)))
+                results[i] = (new Anime(name, slug, img, parseInt(released)))
             }
             return results
         }).catch(() => {
             return []
         });
-    }
+    }*/
 
-    private async getVidStreamURL(href: string, episode: number): Promise<string | null>
+    private async getVidStreamURL(slug: string, episode: number): Promise<string | null>
     {
-        let url:string = BASE_URL + '/' + href.substring(href.lastIndexOf('/')+1)+ "-episode-" + episode
+        const myURL = new URL(slug);
+        let url:string = BASE_URL + slug.replace('category', '').replace(myURL.origin, '') + "-episode-" + episode
         return await got(url).then(response => {
-
             const dom: JSDOM = new JSDOM(response.body);
             return dom.window.document.getElementsByClassName('vidcdn').item(0)!
                 .getElementsByTagName('a').item(0)!.getAttribute('data-video')
-
         }).catch(() => {
-            console.log(chalk.redBright('unable to find video URL'))
-            process.exit(1)
+            return null
         });
 
     }
 
-     async getVideoSrc(href: string, episode: number): Promise<string> {
-        let url = 'https://' + await this.getVidStreamURL(href, episode)
+     async getVideoSrc(slug: string, episode: number): Promise<string> {
+        let url = 'https://' + await this.getVidStreamURL(slug, episode)
         return await got(url).then(response => {
             const dom:JSDOM = new JSDOM(response.body);
             let script : string | null = dom.window.document.querySelector('body > div > div > script')!.textContent;
@@ -81,9 +80,13 @@ export default class Gogoanime implements site{
             let index2: number = srcJSON.indexOf("file: '")
             return srcJSON.substring(index2 + 7, srcJSON.indexOf("',")).trim()
         }).catch(() => {
-            console.log(chalk.redBright('unable to get video source'))
-            process.exit(1)
+            return ''
         });
+    }
+
+    slugExists(slug: string): Promise<boolean>
+    {
+        return utils.ping(BASE_URL + '/category/'+slug)
     }
 
 }

@@ -4,12 +4,13 @@ import got from 'got';
 import {JSDOM} from "jsdom";
 import {MetaData} from "../models/MetaData";
 import site from "./site";
+import {utils} from "../utils/utils";
 
 const BASE_URL = 'https://4anime.to';
 
 export default class FourAnime implements site{
 
-    async getAnimeMetaData(href: string): Promise<MetaData>
+    async getMetaData(href: string): Promise<MetaData>
     {
         return await got(href).then(response => {
             const dom = new JSDOM(response.body);
@@ -21,7 +22,7 @@ export default class FourAnime implements site{
         });
     }
 
-    async search(keyword: string): Promise<Array<Anime>>
+   /* async search(keyword: string): Promise<Array<Anime>>
     {
         let searchURL: string = BASE_URL + "/?s=" + keyword
 
@@ -37,23 +38,31 @@ export default class FourAnime implements site{
                 let img = (info_head.children.item(0)!.getAttribute('src'))!
                 let name = (info_head.children.item(1)!.textContent)!
                 let released = (info_head.children.item(2)!.textContent)
-                results[i-1] = (new Anime(name, href, img, Number(released)))
+                results[i-1] = (new Anime(name, href, img, parseInt(released!)))
             }
             return results
         }).catch(() => {
             return []
         });
     }
-
+*/
     async getVideoSrc(href: string, episode: number): Promise<string> {
-        let url:string = href.replace('/anime', '') + "-episode-" + episode
+        let sepisode = ''
+        if((episode+'').length == 1){
+            sepisode = '0'+episode
+        }else
+            sepisode = ''+episode
+        let url:string = href.replace('/anime', '') + "-episode-" + sepisode
+        if (!url.startsWith(BASE_URL))
+            url = BASE_URL +'/'+url
         return await got(url).then(response => {
             const dom: JSDOM = new JSDOM(response.body);
             return dom.window.document.getElementsByTagName('source')!.item(0)!.getAttribute('src')!
         }).catch(() => {
-            console.log(chalk.redBright('unable to find video URL'))
-            process.exit(1)
+            return ''
         });
     }
-
+    async slugExists(href:string){
+        return utils.ping(BASE_URL + '/anime/'+href)
+    }
 }

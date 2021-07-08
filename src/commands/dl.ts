@@ -1,20 +1,18 @@
 import {Anime} from "../models/Anime";
 const Aria2 = require("aria2");
-const crypto = require("crypto");
-const secret = crypto.randomBytes(20).toString('hex');
-const aria2 = new Aria2({secret: secret});
+const aria2 = new Aria2();
 const { spawn } = require('child_process');
 const path = require('path');
 import chalk from 'chalk';
 import site from "../sites/site";
 import Gogoanime from '../sites/Gogoanime'
 import FourAnime from '../sites/4anime'
+import GogoanimePup from "../sites/Gogoanime-pup";
 const cliProgress = require('cli-progress');
-var commandExists = require('command-exists');
-
+let commandExists = require('command-exists');
 
 export let dl = {
-    async download(anime: Anime, lower: number, upper: number)
+    async download(anime: { name:string, href:string }, lower: number, upper: number)
     {
         function delay(ms: number) {
             return new Promise( resolve => setTimeout(resolve, ms) );
@@ -24,11 +22,14 @@ export let dl = {
             {
                 if (parseInt(results[i][0].totalLength) != 0)
                 {
-                    bars[i].update(parseFloat(((results[i][0].completedLength / results[i][0].totalLength) * 100).toFixed(2)), {ep: i + lower})
+                    let speed: string | number = chalk.yellowBright('waiting')
+                    if(parseInt(results[i][0].downloadSpeed) !== 0)
+                        speed = parseInt(((results[i][0].totalLength - results[i][0].completedLength) / parseInt(results[i][0].downloadSpeed)).toFixed(0)) +'s'
+                    bars[i].update(parseFloat(((results[i][0].completedLength / results[i][0].totalLength) * 100).toFixed(2)), {et: speed})
                 }
                 if (results[i][0].status === 'complete')
                 {
-                    await bars[i].update(100)
+                    await bars[i].update(100, {et: chalk.greenBright('completed')})
                     bars[i] = null
                 }
             }
@@ -36,41 +37,34 @@ export let dl = {
 
         const multibar = new cliProgress.MultiBar({
             clearOnComplete: false,
-            hideCursor: true,
-            format: 'ep: {ep}{gap}|' + chalk.cyanBright('[{bar}]') +' {percentage}% | ETA: {eta}s | {value}/{total}'
+            hideCursor: false,
+            format: 'ep: {ep}{gap}|' + chalk.cyanBright('[{bar}]') +' {percentage}% | ETA: {et} | {value}/{total}'
         });
         let aria_bin: string = ''
 
-        if(process.platform.startsWith('darwin')){
-            try {
-                await commandExists('aria2c');
-                aria_bin = 'aria2c'
-            }catch (e) {
-                aria_bin = path.join(path.resolve(path.dirname(require.main!.filename), '.'),'binary','darwin','aria2c')
-
-            }
-        }
-        else if(process.platform.startsWith('win')){
-            try {
+        try {
+            if(process.platform.startsWith('win'))
+            {
                 await commandExists('aria2c.exe');
                 aria_bin = 'aria2c.exe'
-            }catch (e) {
-                aria_bin = path.join(path.resolve(path.dirname(require.main!.filename), '.'),'binary','win','aria2c.exe')
-            }
-        }
-        else{
-            try {
+            }else{
                 await commandExists('aria2c');
                 aria_bin = 'aria2c'
-            }catch (e) {
-                console.log(chalk.redBright('aria2 is required to download.\ndownload it at https://github.com/aria2/aria2/releases or through your package manager'))
             }
+        }catch (e) {
+            console.log(chalk.redBright('aria2 is required to download videos download at https://github.com/aria2/aria2/releases'))
+            process.exit(34)
         }
-        const cli = spawn(aria_bin, ['--enable-rpc', '--rpc-listen-all=true', '--rpc-allow-origin-all', '--max-concurrent-downloads='+9999999, '--rpc-secret='+secret]);
-        process.on('SIGINT', function() {
-            cli.kill(0)
+
+        const cli = spawn(aria_bin, ['--enable-rpc', '--rpc-listen-all=true', '--rpc-allow-origin-all'/*,'--rpc-secret='+secret*/]);
+        cli.stdout.on('data', function(data:any) {
+            //console.log(data.toString());
         });
-        let t_site: site = new Gogoanime()
+        process.on('SIGINT', async function() {
+            await cli.kill('SIGINT')
+            process.exit(0)
+        });
+        let t_site : site = new GogoanimePup()
         let multi: Array<Array<any>> = []
         let bars: Array<any> = []
 
@@ -96,17 +90,22 @@ export let dl = {
             let url = await t_site.getVideoSrc(anime.href, i)
             //let url = 'https://file-examples-com.github.io/uploads/2017/04/file_example_MP4_480_1_5MG.mp4'
             if (url != null) {
-                let name = anime.name.trim().split('/').join('-').split(' ').join('-')
-                let f_name = name + '-episode-' + i + url.substring(url.lastIndexOf('.'))
-                let temp_id = await aria2.call('addUri', [url], {dir:path.join(process.cwd(),name), out: f_name})
-                multi.push(["tellStatus", temp_id])
-                let gap: string = ' '.repeat(3-(''+i).length)
-                bars.push(multibar.create(100, 0,{ep: i, gap: gap}))
+                let name = anime.name.trim().split(':').join(' ')/*.split('/').join('-').split(' ').join('-')*/
+                let f_name = name + ' episode ' + i + url.substring(url.lastIndexOf('.'))
+                if(url !== '' && !url.endsWith('.m3u8')){
+                    let temp_id = await aria2.call('addUri', [url], {dir:path.join(process.cwd(),name), out: name + ' episode ' + i + '.mp4'})
+                    multi.push(["tellStatus", temp_id])
+                    let gap: string = ' '.repeat(3-(''+i).length)
+                    bars.push(multibar.create(100, 0,{ep: i, gap: gap, et: chalk.yellowBright('waiting')}))
+                }else{
+                    //console.log(chalk.red('back up failed skipping episode ' + i))
+                }
             }
         }
         await wait_for
         await delay(1000)
-        cli.kill(0)
+        await cli.kill('SIGINT')
+        console.log(chalk.greenBright('\ndownloads complete!'))
         process.exit(0)
     }
 }

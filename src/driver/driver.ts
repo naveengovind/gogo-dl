@@ -3,49 +3,111 @@ const chalk = require("chalk");
 import {dl as downloader} from "../commands/dl";
 import {watch} from "../commands/watch";
 import {watchList} from "../commands/watchList"
-import nconf  = require('nconf');
-const utils = require('../utils/utils').utils
+import {utils} from '../utils/utils'
 import {Anime} from "../models/Anime";
 import {PromptObject} from "prompts";
 import Gogoanime from "../sites/Gogoanime";
-import FourAnime from "../sites/4anime";
 import site from "../sites/site";
+import MyAnimeList, {STATUS} from "../utils/mal_utils";
+import got from "got";
+import ConfigFile from "../utils/ConfigFile";
+import GogoanimePup from "../sites/Gogoanime-pup";
+import NineAnime from "../sites/9anime";
+const SUPPORTED_SITES = ['Gogoanime','9anime']
+let t_site = new Map<string,site>()
+t_site.set("Gogoanime", new GogoanimePup())
+t_site.set("9anime", new NineAnime())
 
-let t_site: site = new Gogoanime()
+let mal = new MyAnimeList("00d2c5d06cc8ec154ddd8c8c22ace667")
 
 export let driver = {
-
-   askForShow: async function (title: string, type: string, player:string | undefined){
-
-       let options: Array<Anime>;
-        if(type !== 'list' && type !== 'remove') {
-            options = await t_site.search(title)
-            if (options === null || options === undefined || options === []) {
-                console.log(chalk.redBright('no results found for ') + chalk.yellow('keyword'))
+    mapIDToList: async function(id: number){
+        try
+        {
+            let response = await got('https://api.malsync.moe/mal/anime/' + id)
+            if (response.statusCode === 200 && response.body !== 'Not found in the fire')
+            {
+                let res = JSON.parse(response.body)
+                if (res['Sites'] !== undefined)
+                {
+                    let sites = new Map()
+                    for (const site of Object.keys(res['Sites']))
+                    {
+                        let slug_keys = Object.keys(res['Sites'][site])
+                        if (slug_keys.length > 1)
+                        {
+                            if (res['Sites'][site][slug_keys[0]]['url'].toLowerCase().indexOf('dub') > res['Sites'][site][slug_keys[1]]['url'].toLowerCase().indexOf('dub'))
+                            {
+                                sites.set(site, {
+                                    sub: res['Sites'][site][slug_keys[1]]['url'],
+                                    dub: res['Sites'][site][slug_keys[0]]['url']
+                                })
+                            } else
+                            {
+                                sites.set(site, {
+                                    sub: res['Sites'][site][slug_keys[0]]['url'],
+                                    dub: res['Sites'][site][slug_keys[1]]['url']
+                                })
+                            }
+                        }
+                        else if (slug_keys.length == 1)
+                            sites.set(site, {sub: res['Sites'][site][slug_keys[0]]['url'], dub: undefined})
+                    }
+                    return sites
+                }else
+                    return new Map()
+            }else
+                return new Map()
+        }catch (e)
+        {
+            return new Map()
+        }
+    },
+    askForShow: async function (title: string, cmd: string, player: string | undefined)
+    {
+        let options: Array<Anime> = [];
+        if (cmd !== 'list' && cmd !== 'remove')
+        {
+            let i = 0
+            for(const anime of await mal.search(title, {limit:15})){
+                if(i >= 10)
+                    break
+                let opts = await this.mapIDToList(anime.node.id)
+                if(opts.size > 0){
+                    const intersected = Array.from(opts.keys()).filter(value => SUPPORTED_SITES.includes(value));
+                    if(intersected.length > 0 && anime.node.start_season !== undefined && anime.node.start_season.year !== undefined)
+                    {
+                        options.push(new Anime(anime.node.title, opts, "", anime.node.start_season.year))
+                        i += 1
+                    }
+                }
+            }
+            if (options.length === 0)
+            {
+                console.log(chalk.redBright('no results found for search term ') + chalk.yellow(`${title}`))
                 process.exit(0)
             }
-        }else{
-            try{
-                nconf.use('file', {file: utils.getConfigPath()});
-                nconf.load();
-            }catch (e) {
-                await utils.recreateConfig()
+        } else
+        {
+            for(const anime of await mal.get_watch_list({status:STATUS.watching})){
+                let opts = await this.mapIDToList(anime.node.id)
+                if(opts.size > 0){
+                    options.push(new Anime(anime.node.title, opts, "", anime.node.start_season.year))
+                }
             }
-            options = nconf.get('shows');
-            if(type === 'list')
-                type = title
+            if (cmd === 'list')
+                cmd = title
         }
         let choices: PromptObject = {
             type: 'select',
             name: 'value',
             message: 'Pick a show',
-            choices: [
-
-            ],
+            choices: [],
             initial: 0,
         };
 
-        for (let i = 0; i < options!.length; i++) {
+        for (let i = 0; i < options!.length; i++)
+        {
             choices!.choices!.push({title: options[i].name, description: '' + options[i].released, value: i})
         }
 
@@ -53,61 +115,90 @@ export let driver = {
 
         const response = await prompts(choices);
 
-        if(response.value === undefined)
+        if (response.value === undefined)
             process.exit(0)
 
-        else if(type === 'add') {
+        else if (cmd === 'add')
+        {
             await watchList.newShow(options[response.value])
-        }
-        else if(type === 'remove') {
+        } else if (cmd === 'remove')
+        {
             await watchList.removeShow(options[response.value])
-        }
-        else {
-            await driver.execute(options[response.value], type, player)
+        } else
+        {
+            await driver.execute(options[response.value], cmd, player)
         }
 
     },
-     execute: async function(anime:Anime, type: string, player:string | undefined){
+    execute: async function (anime: Anime, type: string, player: string | undefined)
+    {
+        let rangeNum: { lower: number, upper: number }
+        const intersected = Array.from(anime.href.keys()).filter(value => SUPPORTED_SITES.includes(value));
+        let meta;
+        let url = ''
+        if(anime.href.get(intersected[0])!.dub !== undefined)
+        {
+            const response = await prompts({
+                type: 'toggle',
+                name: 'value',
+                message: 'sub or dub?',
+                initial: true,
+                active: 'sub',
+                inactive: 'dub'
+            });
+            if (response.value)
+                url = anime.href.get(intersected[0])!.sub
+            else
+                url = anime.href.get(intersected[0])!.dub
+        }else
+            url = anime.href.get(intersected[0])!.sub
+        meta = await t_site.get(intersected[0])!.getMetaData(url)
+        if (meta.lastEpisode !== 1)
+        {
+            console.log(`\nThere are ${chalk.magenta(meta.lastEpisode)} episodes`)
 
-        let meta = await t_site.getAnimeMetaData(anime.href)
+            let options: PromptObject = {
+                type: 'text',
+                name: 'value',
+                message: `Episode range [1-${meta.lastEpisode}]`
+            };
 
-        console.log(`\nThere are ${chalk.magenta(meta.lastEpisode)} episodes`)
+            let range = await prompts(options);
+            let rangeStr: string = range.value
 
-        let options: PromptObject = {
-            type: 'text',
-            name: 'value',
-            message: `Episode range [1-${meta.lastEpisode}]`
-        };
+            rangeNum = this.getRangeFromString(rangeStr)
 
-        let range = await prompts(options);
-        let rangeStr: string = range.value
-
-       /* if(range === undefined)
-            process.exit(0)*/
-
-        let rangeNum: {lower: number, upper: number} = this.getRangeFromString(rangeStr)
-
-         if(type === 'dl') {
+            if (rangeNum.lower > rangeNum.upper)
+            {
+                rangeNum = {lower:rangeNum.upper, upper:rangeNum.lower}
+            }
+        }else{
+             rangeNum = {lower:1, upper:1}
+        }
+        if (type === 'dl')
+        {
             console.log()
-            await downloader.download(anime, rangeNum.lower, rangeNum.upper)
+            await downloader.download({href: url, name: anime.name}, rangeNum.lower, rangeNum.upper)
+        } else if (type === 'watch')
+        {
+            await watch.watch({href: url, name: anime.name}, rangeNum.lower, rangeNum.upper, player)
         }
-        else if(type === 'watch')
-            await watch.watch(anime, rangeNum.lower, rangeNum.upper, player)
     },
 
-    getRangeFromString: function(range: string): {lower: number, upper: number}
+    getRangeFromString: function (range: string): { lower: number, upper: number }
     {
         let ind = range.indexOf('-')
         let lower: number
-        let upper : number
+        let upper: number
 
-        if (ind === undefined || ind === -1) {
-            lower = Number(range.trim())
-            upper = Number(range.trim())
-        }
-        else{
-            lower = Number(range.substring(0, ind).trim())
-            upper = Number(range.substring(ind+1).trim())
+        if (ind === undefined || ind === -1)
+        {
+            lower = parseInt(range.trim())
+            upper = parseInt(range.trim())
+        } else
+        {
+            lower = parseInt(range.substring(0, ind).trim())
+            upper = parseInt(range.substring(ind + 1).trim())
         }
         return {lower: lower, upper: upper}
     },

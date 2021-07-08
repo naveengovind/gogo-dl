@@ -4,7 +4,6 @@ import * as yargs from "yargs"
 import {driver} from "./driver/driver";
 import {Argv} from "yargs";
 
-
 interface Arguments {
     title: string
     w: boolean
@@ -57,7 +56,6 @@ function main() {
         })
 
         .command('list', 'open your watch list', (yargs:Argv<Arguments>) => {
-            //TODO implement watch list searching
             yargs.options( {
                 'download':{
                     alias: 'd',
@@ -69,11 +67,6 @@ function main() {
                     type: 'boolean',
                     default: false,
                     description: 'watch video from watch list'
-                },'search': {
-                    alias: 's',
-                    type: 'string',
-                    default: false,
-                    description: 'a key word to search your watchlist'
                 },
                 'mpv': {
                     alias: 'm',
@@ -84,7 +77,7 @@ function main() {
                 'vlc': {
                     alias: 'v',
                     type: 'boolean',
-                    default: true,
+                    default: false,
                     description: 'use vlc'
                 }
             })
@@ -92,8 +85,10 @@ function main() {
             if(argv.w){
                 if(argv.mpv)
                     await driver.askForShow('watch', 'list','mpv')
-                else
+                else if(argv.vlc)
                     await driver.askForShow( 'watch','list', 'vlc')
+                else
+                    await driver.askForShow( 'watch','list', undefined)
             }
             else
                 await driver.askForShow('dl', 'list', '')

@@ -3,18 +3,30 @@
   "version": "3.0.0",
   "license": "(MIT OR Apache-2.0)",
   "dependencies": {
+    "@chris-kode/myanimelist-api-v2": "^1.0.8",
     "@types/node-ipc": "^9.1.4",
+    "animewizard": "^1.0.4",
     "aria2": "^4.1.2",
+    "build": "^0.1.4",
     "chalk": "^4.1.0",
     "cli-progress": "^3.9.0",
     "command-exists": "^1.2.9",
     "got": "^11.8.2",
+    "i": "^0.3.6",
     "jsdom": "^16.5.3",
     "nconf": "^0.11.2",
+    "node-bypasser": "^1.8.0",
     "node-ipc": "^9.1.4",
     "node-libcurl": "^2.3.3",
     "node-mpv": "^2.0.0-beta.2",
+    "npm": "^7.18.1",
+    "open": "^8.2.1",
+    "pkce-challenge": "^2.2.0",
     "prompts": "^2.4.1",
+    "puppeteer": "^10.0.0",
+    "querystring": "^0.2.1",
+    "run": "^1.4.0",
+    "user-agents": "^1.0.707",
     "vlc-command": "^1.2.0",
     "yargs": "^16.2.0"
   },
@@ -23,7 +35,9 @@
     "@types/cli-progress": "^3.9.1",
     "@types/jsdom": "^16.2.10",
     "@types/nconf": "^0.10.0",
+    "@types/node": "^15.12.4",
     "@types/prompts": "^2.0.10",
+    "@types/user-agents": "^1.0.2",
     "@types/yargs": "^16.0.1",
     "ts-node": "^9.1.1",
     "typescript": "^4.2.4"
@@ -50,6 +64,7 @@
     "twist.moe",
     "gogoanime.so",
     "gogoanime.ai",
-    "moe"
+    "moe",
+    "4anime"
   ]
 }
