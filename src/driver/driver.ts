@@ -3,14 +3,12 @@ const chalk = require("chalk");
 import {dl as downloader} from "../commands/dl";
 import {watch} from "../commands/watch";
 import {watchList} from "../commands/watchList"
-import {utils} from '../utils/utils'
 import {Anime} from "../models/Anime";
 import {PromptObject} from "prompts";
 import Gogoanime from "../sites/Gogoanime";
 import site from "../sites/site";
 import MyAnimeList, {STATUS} from "../utils/mal_utils";
 import got from "got";
-import ConfigFile from "../utils/ConfigFile";
 import NineAnime from "../sites/9anime";
 const SUPPORTED_SITES = ['Gogoanime','9anime']
 let t_site = new Map<string,site>()
@@ -76,6 +74,14 @@ export let driver = {
     askForShow: async function (title: string, cmd: string, player: string | undefined)
     {
         let options: Array<Anime> = [];
+        let choices: PromptObject = {
+            type: 'select',
+            name: 'value',
+            message: 'Pick a show',
+            choices: [],
+            initial: 0,
+        };
+
         if (cmd !== 'list' && cmd !== 'remove')
         {
             let i = 0
@@ -87,7 +93,7 @@ export let driver = {
                     const intersected = Array.from(opts.keys()).filter(value => SUPPORTED_SITES.includes(value));
                     if(intersected.length > 0 && anime.node.start_season !== undefined && anime.node.start_season.year !== undefined)
                     {
-                        options.push(new Anime(anime.node.title, opts, "", anime.node.start_season.year))
+                        options.push(new Anime(anime.node.title, opts, "", anime.node.start_season.year, anime.node.id))
                         i += 1
                     }
                 }
@@ -102,19 +108,12 @@ export let driver = {
             for(const anime of await mal.get_watch_list({status:STATUS.watching})){
                 let opts = await this.mapIDToList(anime.node.id)
                 if(opts.size > 0){
-                    options.push(new Anime(anime.node.title, opts, "", anime.node.start_season.year))
+                    options.push(new Anime(anime.node.title, opts, "", anime.node.start_season.year, anime.node.id))
                 }
             }
             if (cmd === 'list')
                 cmd = title
         }
-        let choices: PromptObject = {
-            type: 'select',
-            name: 'value',
-            message: 'Pick a show',
-            choices: [],
-            initial: 0,
-        };
 
         for (let i = 0; i < options!.length; i++)
         {
@@ -130,10 +129,10 @@ export let driver = {
 
         else if (cmd === 'add')
         {
-            await watchList.newShow(options[response.value])
+            await watchList.newShow(options[response.value].id)
         } else if (cmd === 'remove')
         {
-            await watchList.removeShow(options[response.value])
+            await watchList.removeShow(options[response.value].id)
         } else
         {
             await driver.execute(options[response.value], cmd, player)
@@ -263,9 +262,7 @@ export let driver = {
             else if(anime.href.get('9anime') !== undefined){
                 temp = (await this.getUrl(anime, ep, type, "9anime", ''))
                 if (temp !== undefined)
-                {
                     return temp!
-                }
             }
             return back_up!
         }

@@ -1,10 +1,7 @@
-import {Anime} from '../models/Anime'
-const chalk = require('chalk');
 import got from 'got';
 import {JSDOM} from "jsdom";
 import {MetaData} from "../models/MetaData";
 import site from "./site";
-import {utils} from "../utils/utils";
 import puppeteer from "puppeteer";
 
 const BASE_URL = 'https://gogoanime.vc';
@@ -32,11 +29,10 @@ export default class Gogoanime extends site
         });
     }
 
-    /* private static getElem(i:number, items: HTMLCollection, className:string): HTMLAnchorElement
+     private static getElem(i:number, items: HTMLCollection, className:string): HTMLAnchorElement
      {
          return items.item(i)!.getElementsByClassName(className).item(0)!.getElementsByTagName('a').item(0)!
      }
- */
 
     /*async search(keyword: string): Promise<Array<Anime>>
     {
@@ -63,8 +59,8 @@ export default class Gogoanime extends site
         }).catch(() => {
             return []
         });
-    }*/
-
+    }
+*/
     private async getVidStreamURL(slug: string, episode: number, server: string): Promise<string | null>
     {
         const myURL = new URL(slug);
