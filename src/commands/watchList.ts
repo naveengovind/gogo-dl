@@ -20,13 +20,21 @@ export let watchList = {
                 {title: 'Dropped', value: STATUS.dropped},
                 {title: 'Plan To Watch', value: STATUS.plan_to_watch},
                 {title: 'Completed', value: STATUS.completed},
+                {title: 'Delete', value: "DELETE"}
             ],
             initial: 0
         }
         const response = await prompts(options);
-        mal.update_list(id,{status:response.value}).then(response => {
-            console.log(chalk.green('removed'))
-        })
+        if(response.value === "DELETE")
+        {
+           mal.delete_list_item(id).then(response =>{
+               console.log(chalk.green('removed'))
+           })
+        }else{
+            mal.update_list(id, {status: response.value}).then(response => {
+                console.log(chalk.green('removed'))
+            })
+        }
         console.log(chalk.gray('removing ...'))
     }
 }

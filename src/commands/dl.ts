@@ -4,14 +4,11 @@ const aria2 = new Aria2();
 const { spawn } = require('child_process');
 const path = require('path');
 import chalk from 'chalk';
-import site from "../sites/site";
-import Gogoanime from '../sites/Gogoanime'
-import FourAnime from '../sites/4anime'
-import NineAnime from "../sites/9anime";
 import {driver} from "../driver/driver";
+import MyAnimeList from "../utils/mal_utils";
 const cliProgress = require('cli-progress');
 let commandExists = require('command-exists');
-
+let mal = new MyAnimeList("00d2c5d06cc8ec154ddd8c8c22ace667")
 export let dl = {
     async download(anime: Anime, lower: number, upper: number, type:string)
     {
@@ -93,6 +90,7 @@ export let dl = {
                 let name = anime.name.trim().split(':').join(' ')/*.split('/').join('-').split(' ').join('-')*/
                 if(url !== '' && !url.endsWith('.m3u8')){
                     let temp_id = await aria2.call('addUri', [url], {dir:path.join(process.cwd(),name), out: name + ' episode ' + i + '.mp4'})
+                    mal.update_list(anime.id,{num_watched_episodes:i})
                     multi.push(["tellStatus", temp_id])
                     let gap: string = ' '.repeat(3-(''+i).length)
                     bars.push(multibar.create(100, 0,{ep: i, gap: gap, et: chalk.yellowBright('waiting')}))

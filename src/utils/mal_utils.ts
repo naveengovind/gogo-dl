@@ -63,7 +63,7 @@ export default class MyAnimeList
         server.listen(5678);
         await open(url + data);
     }
-    async refresh_access(nconf:any){
+   private async refresh_access(nconf:any){
         const url = "https://myanimelist.net/v1/oauth2/token";
         let options = {
             method: "POST",
@@ -144,12 +144,14 @@ export default class MyAnimeList
         return (await response.json()).data
     }
 
-    async get_watch_list(parameters: { limit?: number, offset?: number, status?: STATUS, sort?: SORT} = {limit: 100, offset: 0}): Promise<Array<AnimeWatchInfo>>
+    async get_watch_list(parameters: { limit?: number, offset?: number, status?: STATUS, sort?: SORT, user?:string} = {limit: 100, offset: 0, user:"@me"}): Promise<Array<AnimeWatchInfo>>
     {
         let token = await this.get_token()
-        const url = "https://api.myanimelist.net/v2/users/@me/animelist?"
         let raw_dat = new Map<string, any>()
         raw_dat.set('fields', "list_status,start_season")
+        raw_dat.set('limit', 100)
+        raw_dat.set("offset",0)
+        raw_dat.set('user', "@me")
 
         for (const key of Object.entries(parameters))
             if (key[1] !== undefined)
@@ -160,7 +162,7 @@ export default class MyAnimeList
         ), {});
 
         const data = querystring.stringify(obj);
-
+        const url = `https://api.myanimelist.net/v2/users/${raw_dat.get('user')}/animelist?`
         let response = await fetch(url + data, { headers: {"Authorization": token}})
 
         return (await response.json()).data
@@ -171,8 +173,12 @@ export default class MyAnimeList
         for (const key of Object.entries(parameters))
             if (key[1] !== undefined)
                 urlencoded.append(key[0], key[1]);
-
         let response = await fetch(`https://api.myanimelist.net/v2/anime/${anime_id}/my_list_status`,{body:urlencoded, method:'PUT', headers: {"Authorization":token, "Content-Type":"application/x-www-form-urlencoded"}, redirect: 'follow'})
         return await response.json()
+    }
+
+    async delete_list_item(anime_id:number){
+        let token = await this.get_token()
+        await fetch(`https://api.myanimelist.net/v2/anime/${anime_id}/my_list_status`,{method:'DELETE', headers: {"Authorization":token}})
     }
 }

@@ -116,18 +116,23 @@ export default class Gogoanime extends site
             await browser.close();
         })
     }
-
     private async get_xstreamcdn(url: string): Promise<string | undefined>{
-        try
+        const browser = await puppeteer.launch();
+        const page = await browser.newPage();
+        return new Promise(async resolve =>
         {
-            const myURL = new URL(url);
-            url = myURL.origin + myURL.pathname.replace('v/', 'api/source')
-            let res = await got(url, {method: "POST"})
-            let files = JSON.parse(res.body)['data']['file']
-            return files[files.length - 1]
-        }catch (e){
-            return undefined
-        }
+            page.on('response', async (response) =>
+            {
+                if (response.url().indexOf('/api/source/') > 0)
+                {
+                    let temp = await response.json()
+                    let srcs = temp['data']
+                    resolve(srcs[srcs.length-1]['file'])
+                }
+            });
+            await page.goto(url);
+            await browser.close();
+        })
     }
     private async get_streamtape(url: string): Promise<string | undefined>{
         try

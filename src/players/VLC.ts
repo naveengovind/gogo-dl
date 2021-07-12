@@ -2,13 +2,18 @@ import VLCommand from "vlc-command";
 const chalk = require("chalk");
 import cp = require('child_process')
 import VideoPlayer from "./VideoPlayer";
+import EventEmitter from "events";
 const crypto = require("crypto");
 const secret = crypto.randomBytes(20).toString("hex")
 const { curly } = require('node-libcurl');
+var emitter = require('events').EventEmitter;
 
-export default class VLC implements VideoPlayer{
+export default class VLC extends VideoPlayer{
+    private s_time: number;
 
      constructor(url: string) {
+         super()
+         this.s_time = Date.now()
         let cp_pros: any
         VLCommand(async function (err: Error, cmd:string) {
             if (err) {
@@ -25,8 +30,45 @@ export default class VLC implements VideoPlayer{
             })
         })
     }
-
-    async append(url: string): Promise<void> {
-        await curly.get('http://:'+secret+'@localhost:6942/requests/status.json?command=in_enqueue&input='+url)
+    private async check(){
+        function delay(ms: number) {
+            return new Promise( resolve => setTimeout(resolve, ms) );
+        }
+        let end = Date.now()
+        if(end - this.s_time < 10000){
+            await delay(10000 - (end - this.s_time))
+        }
+    }
+    async append(url: string) {
+         await this.check()
+        return JSON.parse((await curly.get('http://:'+secret+'@localhost:6942/requests/status.json?command=in_enqueue&input='+url)).data)
      }
+
+     async getPercentPos(){
+         await this.check()
+         let a = JSON.parse((await curly.get('http://:'+secret+'@localhost:6942/requests/status.json')).data)
+         return (a.time/a.length)*100
+     }
+     private async get_status(){
+         await this.check()
+         return JSON.parse((await curly.get('http://:'+secret+'@localhost:6942/requests/status.json')).data)
+     }
+    private async get_playlist(){
+         await this.check()
+        return JSON.parse((await curly.get('http://:'+secret+'@localhost:6942/requests/playlist.json')).data)
+    }
+
+     async getFileName():Promise<string>{
+         await this.check()
+         let childs = (await this.get_playlist())['children'][0]["children"]
+         let stusts = (await this.get_status())
+         const match = stusts['information']['category']['meta']['filename']
+         for(const child of childs){
+             if(match == child['name']){
+                 return child['uri'].toString()
+             }
+         }
+         return ''
+    }
+
 }

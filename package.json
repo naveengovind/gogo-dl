@@ -14,6 +14,7 @@
     "gogoanime-scraper": "^1.0.9",
     "got": "^11.8.2",
     "i": "^0.3.6",
+    "jquery": "^3.6.0",
     "jsdom": "^16.5.3",
     "nconf": "^0.11.2",
     "node-bypasser": "^1.8.0",

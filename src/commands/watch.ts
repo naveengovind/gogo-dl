@@ -1,16 +1,13 @@
-import site from "../sites/site";
 import chalk from 'chalk';
 import {Anime} from "../models/Anime";
 import VideoPlayer from "../players/VideoPlayer";
 import VLC from "../players/VLC";
 import MPV from "../players/MPV";
-import Gogoanime from "../sites/Gogoanime";
-import FourAnime from "../sites/4anime";
 import nconf = require('nconf');
 import {utils} from "../utils/utils";
-import NineAnime from "../sites/9anime";
 import {driver} from "../driver/driver";
-
+import MyAnimeList from "../utils/mal_utils";
+let mal = new MyAnimeList("00d2c5d06cc8ec154ddd8c8c22ace667")
 export let watch = {
     getPlayer: function (player: string | undefined): string
     {
@@ -58,6 +55,10 @@ export let watch = {
                     await videoPlayer!.append(stream)
                     console.log(chalk.greenBright(`added episode ${i} to queue`))
                 }
+                videoPlayer!.getEventListener(stream, i).on('watch_80', function (ani)
+                {
+                    mal.update_list(anime.id,{num_watched_episodes:ani.ep})
+                })
             }
             else {
                 console.log(chalk.redBright('unable to add episode ' + i + ' to queue'))
