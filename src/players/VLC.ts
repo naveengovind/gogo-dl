@@ -2,11 +2,9 @@ import VLCommand from "vlc-command";
 const chalk = require("chalk");
 import cp = require('child_process')
 import VideoPlayer from "./VideoPlayer";
-import EventEmitter from "events";
 const crypto = require("crypto");
 const secret = crypto.randomBytes(20).toString("hex")
 const { curly } = require('node-libcurl');
-var emitter = require('events').EventEmitter;
 
 export default class VLC extends VideoPlayer{
     private s_time: number;
@@ -64,7 +62,7 @@ export default class VLC extends VideoPlayer{
          let stusts = (await this.get_status())
          const match = stusts['information']['category']['meta']['filename']
          for(const child of childs){
-             if(match == child['name']){
+             if(match === child['name']){
                  return child['uri'].toString()
              }
          }

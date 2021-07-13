@@ -2,8 +2,11 @@ import prompts =  require("prompts");
 import fs = require("fs");
 const chalk = require("chalk");
 const path = require('path')
-import got from 'got';
 import https from "https";
+import MyAnimeList from "./mal_utils";
+
+let mal = new MyAnimeList("00d2c5d06cc8ec154ddd8c8c22ace667")
+
 export let utils = {
 
     async downloadAria2(): Promise<any>{
@@ -17,20 +20,8 @@ export let utils = {
         });
         return file
     },
-
-    async recreateConfig(){
-        console.log(chalk.red('unable to open watch list file or file may be corrupt'));
-        const response = await prompts({
-            type: 'toggle',
-            name: 'value',
-            message: 'would you like to recreate the file?',
-            initial: true,
-            active: 'yes',
-            inactive: 'no'
-        });
-        if(response.value)
-            fs.rmSync(utils.getConfigPath())
-        process.exit(0)
+    getMal(){
+        return mal
     },
     getConfigDirectory(): string{
         let conf: string

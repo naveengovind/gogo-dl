@@ -7,15 +7,14 @@ import {Anime} from "../models/Anime";
 import {PromptObject} from "prompts";
 import Gogoanime from "../sites/Gogoanime";
 import site from "../sites/site";
-import MyAnimeList, {STATUS} from "../utils/mal_utils";
+import {STATUS} from "../utils/mal_utils";
 import got from "got";
 import NineAnime from "../sites/9anime";
+import {utils} from "../utils/utils";
 const SUPPORTED_SITES = ['Gogoanime','9anime']
 let t_site = new Map<string,site>()
 t_site.set("Gogoanime", new Gogoanime())
 t_site.set("9anime", new NineAnime())
-
-let mal = new MyAnimeList("00d2c5d06cc8ec154ddd8c8c22ace667")
 
 export let driver = {
     mapIDToList: async function(id: number){
@@ -85,7 +84,7 @@ export let driver = {
         if (cmd !== 'list' && cmd !== 'remove')
         {
             let i = 0
-            for(const anime of await mal.search(title, {limit:15})){
+            for(const anime of await utils.getMal().search(title, {limit:15})){
                 if(i >= 7)
                     break
                 let opts = await this.mapIDToList(anime.node.id)
@@ -105,7 +104,7 @@ export let driver = {
             }
         } else
         {
-            for(const anime of await mal.get_watch_list({status:STATUS.watching})){
+            for(const anime of await utils.getMal().get_watch_list({status:STATUS.watching})){
                 let opts = await this.mapIDToList(anime.node.id)
                 if(opts.size > 0){
                     options.push(new Anime(anime.node.title, opts, "", anime.node.start_season.year, anime.node.id))

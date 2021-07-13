@@ -6,8 +6,6 @@ import MPV from "../players/MPV";
 import nconf = require('nconf');
 import {utils} from "../utils/utils";
 import {driver} from "../driver/driver";
-import MyAnimeList from "../utils/mal_utils";
-let mal = new MyAnimeList("00d2c5d06cc8ec154ddd8c8c22ace667")
 export let watch = {
     getPlayer: function (player: string | undefined): string
     {
@@ -57,7 +55,7 @@ export let watch = {
                 }
                 videoPlayer!.getEventListener(stream, i).on('watch_80', function (ani)
                 {
-                    mal.update_list(anime.id,{num_watched_episodes:ani.ep})
+                    utils.getMal().update_list(anime.id,{num_watched_episodes:ani.ep})
                 })
             }
             else {

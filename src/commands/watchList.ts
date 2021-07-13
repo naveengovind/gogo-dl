@@ -1,12 +1,12 @@
-import MyAnimeList, {STATUS} from "../utils/mal_utils";
 import prompts, {PromptObject} from "prompts";
 import chalk from "chalk";
-let mal = new MyAnimeList("00d2c5d06cc8ec154ddd8c8c22ace667")
+import {STATUS} from "../utils/mal_utils";
+import {utils} from "../utils/utils";
 export let watchList = {
 
     async newShow(id: number)
     {
-        await mal.update_list(id,{status:STATUS.watching})
+        await utils.getMal().update_list(id,{status:STATUS.watching})
     },
 
     async removeShow(id: number)
@@ -27,11 +27,11 @@ export let watchList = {
         const response = await prompts(options);
         if(response.value === "DELETE")
         {
-           mal.delete_list_item(id).then(response =>{
+           utils.getMal().delete_list_item(id).then(response =>{
                console.log(chalk.green('removed'))
            })
         }else{
-            mal.update_list(id, {status: response.value}).then(response => {
+            utils.getMal().update_list(id, {status: response.value}).then(response => {
                 console.log(chalk.green('removed'))
             })
         }
