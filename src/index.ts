@@ -1,8 +1,10 @@
 #! /usr/bin/env node
-
 import * as yargs from "yargs"
 import {driver} from "./driver/driver";
 import {Argv} from "yargs";
+import {utils} from "./utils/utils";
+import ConfigFile from "./utils/ConfigFile";
+import chalk from "chalk";
 
 interface Arguments {
     title: string
@@ -13,6 +15,7 @@ interface Arguments {
     vlc:boolean
 }
 const DEBUG = false
+let nconf = new ConfigFile(utils.getConfigPath())
 function main() {
     try
     {
@@ -99,6 +102,10 @@ function main() {
                 })
             }, async function (argv: Arguments)
             {
+                if(nconf.get('token') === undefined){
+                    console.log(chalk.yellowBright("Authentication is required for this action\nrun") + ("\"gogo auth\"") + chalk.yellowBright("to authenticate with MAL"))
+                    process.exit(0)
+                }
                 if (argv.w)
                 {
                     if (argv.mpv)
@@ -109,6 +116,14 @@ function main() {
                         await driver.askForShow('watch', 'list', undefined)
                 } else
                     await driver.askForShow('dl', 'list', '')
+            }).command('auth', 'authenticate gogo-dl with MAL', (yargs: Argv<Arguments>) =>
+            {
+
+            }, async function (argv: Arguments)
+            {
+                if(await utils.getMal().reauthenticate()!== undefined ){
+                    console.log(chalk.greenBright('successfully authenticated'))
+                }
             })
             .command('add [title]', 'add a show to your watch list', (yargs: Argv<Arguments>) =>
             {
@@ -118,6 +133,10 @@ function main() {
                 })
             }, async function (argv: Arguments)
             {
+                if(nconf.get('token') === undefined){
+                    console.log(chalk.yellowBright("Authentication is required for this action\nrun") + ("\"gogo auth\"") + chalk.yellowBright("to authenticate with MAL"))
+                    process.exit(0)
+                }
                 await driver.askForShow(argv.title, 'add', '')
             })
             .command('remove [title]', 'remove a show from your watch list', () =>
@@ -125,6 +144,10 @@ function main() {
 
             }, async function (argv: Arguments)
             {
+                if(nconf.get('token') === undefined){
+                    console.log(chalk.yellowBright("Authentication is required for this action\nrun") + ("\"gogo auth\"") + chalk.yellowBright("to authenticate with MAL"))
+                    process.exit(0)
+                }
                 await driver.askForShow(argv.title, 'remove', '')
             }).showHelpOnFail(true)
             .demandCommand(1, '')

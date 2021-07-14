@@ -21,9 +21,6 @@
     "pkce-challenge": "^2.2.0",
     "prompts": "^2.4.1",
     "puppeteer": "^10.0.0",
-    "querystring": "^0.2.1",
-    "undici": "^4.1.1",
-    "undici-fetch": "^1.0.0-rc.4",
     "user-agents": "^1.0.707",
     "vlc-command": "^1.2.0",
     "yargs": "^16.2.0"

@@ -1,6 +1,4 @@
-import {Anime} from "../models/Anime";
 import {MetaData} from "../models/MetaData";
-import {utils} from "../utils/utils";
 import got from "got";
 
 export default abstract class site {

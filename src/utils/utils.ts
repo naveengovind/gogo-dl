@@ -1,6 +1,4 @@
-import prompts =  require("prompts");
 import fs = require("fs");
-const chalk = require("chalk");
 const path = require('path')
 import https from "https";
 import MyAnimeList from "./mal_utils";

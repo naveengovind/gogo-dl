@@ -6,8 +6,10 @@ const path = require('path');
 import chalk from 'chalk';
 import {driver} from "../driver/driver";
 import {utils} from "../utils/utils";
+import ConfigFile from "../utils/ConfigFile";
 const cliProgress = require('cli-progress');
 let commandExists = require('command-exists');
+let nconf = new ConfigFile(utils.getConfigPath())
 export let dl = {
     async download(anime: Anime, lower: number, upper: number, type:string)
     {
@@ -89,7 +91,9 @@ export let dl = {
                 let name = anime.name.trim().split(':').join(' ')/*.split('/').join('-').split(' ').join('-')*/
                 if(url !== '' && !url.endsWith('.m3u8')){
                     let temp_id = await aria2.call('addUri', [url], {dir:path.join(process.cwd(),name), out: name + ' episode ' + i + '.mp4'})
-                    utils.getMal().update_list(anime.id,{num_watched_episodes:i})
+                    if(nconf.get('token') !== undefined){
+                        utils.getMal().update_list(anime.id,{num_watched_episodes:i})
+                    }
                     multi.push(["tellStatus", temp_id])
                     let gap: string = ' '.repeat(3-(''+i).length)
                     bars.push(multibar.create(100, 0,{ep: i, gap: gap, et: chalk.yellowBright('waiting')}))

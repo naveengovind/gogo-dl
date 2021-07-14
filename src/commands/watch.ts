@@ -3,20 +3,18 @@ import {Anime} from "../models/Anime";
 import VideoPlayer from "../players/VideoPlayer";
 import VLC from "../players/VLC";
 import MPV from "../players/MPV";
-import nconf = require('nconf');
 import {utils} from "../utils/utils";
 import {driver} from "../driver/driver";
+import ConfigFile from "../utils/ConfigFile";
+let nconf = new ConfigFile(utils.getConfigPath())
 export let watch = {
     getPlayer: function (player: string | undefined): string
     {
         if(player === undefined)
         {
-            nconf.use('file', {file: utils.getConfigPath()})
-            nconf.load()
             if (nconf.get('player') === undefined)
             {
                 nconf.set('player', 'vlc')
-                nconf.save(function (err: any) {})
                 return 'vlc'
             }
             else if(nconf.get('player') === 'mpv'){
@@ -55,7 +53,8 @@ export let watch = {
                 }
                 videoPlayer!.getEventListener(stream, i).on('watch_80', function (ani)
                 {
-                    utils.getMal().update_list(anime.id,{num_watched_episodes:ani.ep})
+                    if(nconf.get('token') !== undefined)
+                        utils.getMal().update_list(anime.id,{num_watched_episodes:ani.ep})
                 })
             }
             else {

@@ -99,7 +99,7 @@ export let driver = {
         if (cmd !== 'list' && cmd !== 'remove')
         {
             let i = 0
-            for(const anime of await utils.getMal().search(title, {limit:15})){
+            for(const anime of await utils.getMal().search(title, {limit:15,offset:0})){
                 if(i >= 7)
                     break
                 let opts = await this.mapIDToList(anime.node)
