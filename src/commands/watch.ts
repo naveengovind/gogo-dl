@@ -51,11 +51,14 @@ export let watch = {
                     await videoPlayer!.append(stream)
                     console.log(chalk.greenBright(`added episode ${i} to queue`))
                 }
-                videoPlayer!.getEventListener(stream, i).on('watch_80', function (ani)
+                if(nconf.get('token') !== undefined)
                 {
-                    if(nconf.get('token') !== undefined)
-                        utils.getMal().update_list(anime.id,{num_watched_episodes:ani.ep})
-                })
+                    videoPlayer!.getEventListener(stream, i).on('watch_80', function (ani)
+                    {
+
+                        utils.getMal().update_list(anime.id, {num_watched_episodes: ani.ep})
+                    })
+                }
             }
             else {
                 console.log(chalk.redBright('unable to add episode ' + i + ' to queue'))
