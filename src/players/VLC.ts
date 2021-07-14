@@ -39,32 +39,47 @@ export default class VLC extends VideoPlayer{
     }
     async append(url: string) {
          await this.check()
-        return JSON.parse((await curly.get('http://:'+secret+'@localhost:6942/requests/status.json?command=in_enqueue&input='+url)).data)
+         return JSON.parse((await curly.get('http://:'+secret+'@localhost:6942/requests/status.json?command=in_enqueue&input='+url)).data)
      }
 
      async getPercentPos(){
-         await this.check()
-         let a = JSON.parse((await curly.get('http://:'+secret+'@localhost:6942/requests/status.json')).data)
-         return (a.time/a.length)*100
+         try
+         {
+             await this.check()
+             let a = await this.get_status()
+             return (a.time / a.length) * 100
+         }catch (e)
+         {
+             return 0.0
+         }
      }
      private async get_status(){
          await this.check()
          return JSON.parse((await curly.get('http://:'+secret+'@localhost:6942/requests/status.json')).data)
      }
+
     private async get_playlist(){
          await this.check()
         return JSON.parse((await curly.get('http://:'+secret+'@localhost:6942/requests/playlist.json')).data)
     }
 
      async getFileName():Promise<string>{
-         await this.check()
-         let childs = (await this.get_playlist())['children'][0]["children"]
-         let stusts = (await this.get_status())
-         const match = stusts['information']['category']['meta']['filename']
-         for(const child of childs){
-             if(match === child['name']){
-                 return child['uri'].toString()
+         try
+         {
+             await this.check()
+             let childs = (await this.get_playlist())['children'][0]["children"]
+             let stusts = (await this.get_status())
+             const match = stusts['information']['category']['meta']['filename']
+             for (const child of childs)
+             {
+                 if (match === child['name'])
+                 {
+                     return child['uri'].toString()
+                 }
              }
+         }catch (e)
+         {
+
          }
          return ''
     }

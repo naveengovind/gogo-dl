@@ -11,52 +11,63 @@ import {STATUS} from "../utils/mal_utils";
 import got from "got";
 import NineAnime from "../sites/9anime";
 import {utils} from "../utils/utils";
+import cliSpinners from "cli-spinners";
+var loadingSpinner = require('loading-spinner');
 const SUPPORTED_SITES = ['Gogoanime','9anime']
 let t_site = new Map<string,site>()
 t_site.set("Gogoanime", new Gogoanime())
 t_site.set("9anime", new NineAnime())
 
 export let driver = {
-    mapIDToList: async function(id: number){
+    mapIDToList: async function(ani: any){
+        let id = ani.id
+        let date = Date.parse(ani.start_date)
+        let url = `https://api.malsync.moe/mal/anime/${id}`
+        let site_key = 'Sites'
+        if(Date.now() - date.valueOf() > 1209600000)
+        {
+            url = `https://raw.githubusercontent.com/MALSync/MAL-Sync-Backup/master/data/myanimelist/anime/${id}.json`
+            site_key = 'Pages'
+        }
         try
         {
-            let response = await got('https://api.malsync.moe/mal/anime/' + id)
+            let response = await got(url)
             if (response.statusCode === 200 && response.body !== 'Not found in the fire')
             {
                 let res = JSON.parse(response.body)
-                if (res['Sites'] !== undefined)
+                if (res[site_key] !== undefined)
                 {
                     let sites = new Map()
-                    for (const site of Object.keys(res['Sites']))
+                    for (const site of Object.keys(res[site_key]))
                     {
-                        let slug_keys = Object.keys(res['Sites'][site])
+                        let slug_keys = Object.keys(res[site_key][site])
                         let ind_subs = {dub:undefined, sub:undefined, uncen:undefined}
                         if(site === 'Gogoanime'){
                             for(const key of slug_keys)
                             {
                                 if(key.toLowerCase().endsWith('-uncensored')){
-                                    ind_subs.uncen = res['Sites'][site][key]['url']
+                                    ind_subs.uncen = res[site_key][site][key]['url']
                                 }else if(key.toLowerCase().endsWith('-dub')){
-                                    ind_subs.dub = res['Sites'][site][key]['url']
+                                    ind_subs.dub = res[site_key][site][key]['url']
                                 }else{
-                                    ind_subs.sub = res['Sites'][site][key]['url']
+                                    ind_subs.sub = res[site_key][site][key]['url']
                                 }
                             }
                         }else
                         {
                             if (slug_keys.length == 2)
                             {
-                                if (res['Sites'][site][slug_keys[0]]['url'].toLowerCase().lastIndexOf('dub') > res['Sites'][site][slug_keys[1]]['url'].toLowerCase().lastIndexOf('dub'))
+                                if (res[site_key][site][slug_keys[0]]['url'].toLowerCase().lastIndexOf('dub') > res[site_key][site][slug_keys[1]]['url'].toLowerCase().lastIndexOf('dub'))
                                 {
-                                    ind_subs.dub = res['Sites'][site][slug_keys[0]]['url']
-                                    ind_subs.sub = res['Sites'][site][slug_keys[1]]['url']
+                                    ind_subs.dub = res[site_key][site][slug_keys[0]]['url']
+                                    ind_subs.sub = res[site_key][site][slug_keys[1]]['url']
                                 } else
                                 {
-                                    ind_subs.dub = res['Sites'][site][slug_keys[1]]['url']
-                                    ind_subs.sub = res['Sites'][site][slug_keys[0]]['url']
+                                    ind_subs.dub = res[site_key][site][slug_keys[1]]['url']
+                                    ind_subs.sub = res[site_key][site][slug_keys[0]]['url']
                                 }
                             }else
-                                ind_subs.sub = res['Sites'][site][slug_keys[0]]['url']
+                                ind_subs.sub = res[site_key][site][slug_keys[0]]['url']
                         }
                         sites.set(site,ind_subs)
                     }
@@ -72,6 +83,10 @@ export let driver = {
     },
     askForShow: async function (title: string, cmd: string, player: string | undefined)
     {
+        let style = cliSpinners.bouncingBar
+        loadingSpinner.setSequence(style.frames);
+        process.stdout.write(chalk.gray('fetching from MAL '));
+        loadingSpinner.start(style.interval, {clearLine:true});
         let options: Array<Anime> = [];
         let choices: PromptObject = {
             type: 'select',
@@ -87,7 +102,7 @@ export let driver = {
             for(const anime of await utils.getMal().search(title, {limit:15})){
                 if(i >= 7)
                     break
-                let opts = await this.mapIDToList(anime.node.id)
+                let opts = await this.mapIDToList(anime.node)
                 if(opts.size > 0){
                     const intersected = Array.from(opts.keys()).filter(value => SUPPORTED_SITES.includes(value));
                     if(intersected.length > 0 && anime.node.start_season !== undefined && anime.node.start_season.year !== undefined)
@@ -104,8 +119,9 @@ export let driver = {
             }
         } else
         {
-            for(const anime of await utils.getMal().get_watch_list({status:STATUS.watching})){
-                let opts = await this.mapIDToList(anime.node.id)
+            let watch_lists = await utils.getMal().get_watch_list({status:STATUS.watching})
+            for(const anime of watch_lists){
+                let opts = await this.mapIDToList(anime.node)
                 if(opts.size > 0){
                     options.push(new Anime(anime.node.title, opts, "", anime.node.start_season.year, anime.node.id))
                 }
@@ -119,8 +135,8 @@ export let driver = {
             choices!.choices!.push({title: options[i].name, description: '' + options[i].released, value: i})
         }
 
-        console.log();
-
+        loadingSpinner.stop();
+        console.log()
         const response = await prompts(choices);
 
         if (response.value === undefined)
@@ -196,9 +212,11 @@ export let driver = {
 
             let range = await prompts(options);
             let rangeStr: string = range.value
-
-            rangeNum = this.getRangeFromString(rangeStr)
-
+            if(rangeStr !== undefined && rangeStr !== null && rangeStr.trim().length > 0)
+                rangeNum = this.getRangeFromString(rangeStr)
+            else{
+                process.exit(0)
+            }
             if (rangeNum.lower > rangeNum.upper)
             {
                 rangeNum = {lower:rangeNum.upper, upper:rangeNum.lower}

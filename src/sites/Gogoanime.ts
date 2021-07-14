@@ -3,8 +3,9 @@ import {JSDOM} from "jsdom";
 import {MetaData} from "../models/MetaData";
 import site from "./site";
 import puppeteer from "puppeteer";
+const fetch = require('node-fetch');
+let BASE_URL = 'https://gogoanime.vc';
 
-const BASE_URL = 'https://gogoanime.vc';
 
 export default class Gogoanime extends site
 {
@@ -145,25 +146,38 @@ export default class Gogoanime extends site
             return undefined
         }
     }
-
+    private async fetchBASE_URL(){
+        try {
+            const response = await fetch('https://raw.githubusercontent.com/naveengovind/gogo-dl/typescript-migration/resources/base_urls.json');
+            BASE_URL = (await response.json())['sources']['Gogoanime']['url'];
+        } catch (error) {
+            console.log(error)
+        }
+    }
     async getVideoSrc(slug: string, episode: number, server: string='anime'): Promise<string | undefined>
     {
+        await this.fetchBASE_URL()
         try
         {
             let resp = await this.getVidStreamURL(slug, episode, server)
             if (resp !== null)
             {
                 let url = resp!
+                let ret_url: string | undefined
                 if (server === 'vidcdn')
-                    return await this.get_vidcdn(url)
+                    ret_url = await this.get_vidcdn(url)
                 else if (server === 'anime')
-                    return await this.get_anime(url)
+                    ret_url =  await this.get_anime(url)
                 else if (server === 'xstreamcdn')
-                    return await this.get_xstreamcdn(url)
+                    ret_url = await this.get_xstreamcdn(url)
                 else if (server === 'streamtape')
-                    return await this.get_streamtape(url)
+                    ret_url = await this.get_streamtape(url)
                 else
                     return undefined
+                if(ret_url !== undefined){
+                    let res  = await fetch(ret_url!, {redirect:'follow'})
+                    return res.url
+                }
             }
         }catch (e)
         {

@@ -3,7 +3,6 @@
 import * as yargs from "yargs"
 import {driver} from "./driver/driver";
 import {Argv} from "yargs";
-import MyAnimeList from "./utils/mal_utils";
 
 interface Arguments {
     title: string
@@ -13,10 +12,19 @@ interface Arguments {
     mpv:boolean
     vlc:boolean
 }
-
+const DEBUG = false
 function main() {
     try
     {
+        if(!DEBUG)
+        {
+            console.warn = () =>
+            {
+            };
+            console.error = () =>
+            {
+            };
+        }
         yargs.scriptName("gogo-dl")
             .usage('$0 <cmd> [args]')
 

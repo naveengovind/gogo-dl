@@ -129,7 +129,7 @@ export default class MyAnimeList
         })
     }
 
-    async search(q: string, parameters: {limit?: number, offset?: number} = {limit: 100, offset: 0}): Promise<Array<any>>
+    async search(q: string, parameters: {limit?: number, offset?: number} = {limit: 100, offset: 0}): Promise<Array<AnimeWatchInfo>>
     {
         let token = await this.get_token()
         const url = "https://api.myanimelist.net/v2/anime?"
@@ -137,18 +137,19 @@ export default class MyAnimeList
             q: q,
             limit: parameters.limit,
             offset: parameters.offset,
-            fields: 'start_season'
+            fields: 'start_date,start_season'
         });
 
         let response = await fetch(url + data, {headers:{"Authorization": token}})
-        return (await response.json()).data
+        let man = (await response.json()).data
+        return man
     }
 
     async get_watch_list(parameters: { limit?: number, offset?: number, status?: STATUS, sort?: SORT, user?:string} = {limit: 100, offset: 0, user:"@me"}): Promise<Array<AnimeWatchInfo>>
     {
         let token = await this.get_token()
         let raw_dat = new Map<string, any>()
-        raw_dat.set('fields', "list_status,start_season")
+        raw_dat.set('fields', "list_status,start_season,start_date")
         raw_dat.set('limit', 100)
         raw_dat.set("offset",0)
         raw_dat.set('user', "@me")

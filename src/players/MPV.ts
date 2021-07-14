@@ -10,7 +10,9 @@ export default class MPV extends VideoPlayer{
         super()
         try {
             this.client = new mpvAPI()
-            this.client.start().then(a => {this.client.load(url)})
+            this.client.start().then(a => {this.client.load(url)}).catch(e =>{
+                console.log(e)
+            })
             this.s_time = Date.now()
         } catch(err) {
             console.log(chalk.redBright('could not find MPV command path make sure you have MPV installed\ncheckout: https://mpv.io/installation/ to install it'))
@@ -31,12 +33,23 @@ export default class MPV extends VideoPlayer{
     }
     async getPercentPos(){
         await this.check()
-        return await this.client.getPercentPosition()
+        try
+        {
+            return await this.client.getPercentPosition()
+        }catch (e)
+        {
+            return 0.0
+        }
     }
     async getFileName(){
         await this.check()
-        return await this.client.getFilename("full")
+        try
+        {
+            return await this.client.getFilename("full")
+        }catch (e)
+        {
+            return ''
+        }
     }
-
 
 }
