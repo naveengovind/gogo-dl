@@ -96,10 +96,14 @@ export let dl = {
                     }
                     multi.push(["tellStatus", temp_id])
                     let gap: string = ' '.repeat(3-(''+i).length)
-                    bars.push(multibar.create(100, 0,{ep: i, gap: gap, et: chalk.yellowBright('waiting')}))
+                    let tbar = multibar.create(100, 0,{ep: i, gap: gap, et: chalk.yellowBright('waiting')})
+                    if(tbar !== undefined)
+                         bars.push(tbar)
                 }else{
                     let gap: string = ' '.repeat(3-(''+i).length)
-                    bars.push(multibar.create(100, 0,{ep: i, gap: gap, et: chalk.red('failed')}))
+                    let tbar = (multibar.create(100, 0,{ep: i, gap: gap, et: chalk.red('failed')}))
+                    if(tbar !== undefined)
+                        bars.push(tbar)
                 }
             }
         }

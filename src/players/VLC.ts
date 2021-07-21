@@ -3,9 +3,8 @@ const chalk = require("chalk");
 import cp = require('child_process')
 import VideoPlayer from "./VideoPlayer";
 const crypto = require("crypto");
+import puppeteer from "puppeteer";
 const secret = crypto.randomBytes(20).toString("hex")
-const { curly } = require('node-libcurl');
-
 export default class VLC extends VideoPlayer{
     private s_time: number;
 
@@ -18,11 +17,7 @@ export default class VLC extends VideoPlayer{
                 console.log(chalk.redBright('could not find VLC command path make sure you have VLC installed\ncheckout: https://www.videolan.org/vlc/'))
                 process.exit(0)
             }
-            if (process.platform === 'win32') {
-                cp_pros = await cp.spawn(cmd, [" --extraintf http --http-password "+ secret +" --http-port 6942 " + url])
-            } else {
-                cp_pros = await cp.spawn(cmd, ["--extraintf","http", "--http-password", secret, "--http-port", '6942', url])
-            }
+            cp_pros = await cp.spawn(cmd, ["--extraintf","http", "--http-password", secret, "--http-port", '6942', url])
             cp_pros!.on('exit', function() {
                 process.exit(0)
             })
@@ -37,9 +32,11 @@ export default class VLC extends VideoPlayer{
             await delay(10000 - (end - this.s_time))
         }
     }
-    async append(url: string) {
+    async append(url: string):Promise<any> {
          await this.check()
-         return JSON.parse((await curly.get('http://:'+secret+'@localhost:6942/requests/status.json?command=in_enqueue&input='+url)).data)
+        const browser = await puppeteer.launch();
+        const page = await browser.newPage();
+        return await (await page.goto(`http://:${secret}@localhost:6942/requests/status.json?command=in_enqueue&input=${url}`)).json()
      }
 
      async getPercentPos(){
@@ -53,14 +50,18 @@ export default class VLC extends VideoPlayer{
              return 0.0
          }
      }
-     private async get_status(){
+     private async get_status():Promise<any>{
          await this.check()
-         return JSON.parse((await curly.get('http://:'+secret+'@localhost:6942/requests/status.json')).data)
+         const browser = await puppeteer.launch();
+         const page = await browser.newPage();
+         return await (await page.goto(`http://:${secret}@localhost:6942/requests/status.json`)).json()
      }
 
-    private async get_playlist(){
+    private async get_playlist():Promise<any>{
          await this.check()
-        return JSON.parse((await curly.get('http://:'+secret+'@localhost:6942/requests/playlist.json')).data)
+        const browser = await puppeteer.launch();
+        const page = await browser.newPage();
+        return await (await page.goto(`http://:${secret}@localhost:6942/requests/playlist.json`)).json()
     }
 
      async getFileName():Promise<string>{

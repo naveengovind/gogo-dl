@@ -24,7 +24,7 @@ export let utils = {
     getConfigDirectory(): string{
         let conf: string
         if(process.platform.startsWith('win'))
-            conf = path.join(require('os').homedir(), '%AppData%', 'Roaming', 'gogo-dl')
+            conf = path.join(require('os').homedir(), 'AppData', 'Roaming', 'gogo-dl')
         else
             conf = path.join(require('os').homedir(),'.config','gogo-dl')
         if(fs.existsSync(conf)){

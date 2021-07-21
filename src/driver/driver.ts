@@ -132,6 +132,7 @@ export let driver = {
 
         for (let i = 0; i < options!.length; i++)
         {
+            // @ts-ignore
             choices!.choices!.push({title: options[i].name, description: '' + options[i].released, value: i})
         }
 
@@ -176,10 +177,14 @@ export let driver = {
             }
 
             if (anime.href.get(default_src)!.dub !== undefined)
-                options.choices?.push({title: 'Dubbed', value: 'dub'})
+                { // @ts-ignore
+                    options.choices?.push({title: 'Dubbed', value: 'dub'})
+                }
 
             if (anime.href.get(default_src)!.uncen !== undefined)
-                options.choices?.push({title: 'Uncensored', value: 'uncen'})
+                { // @ts-ignore
+                    options.choices?.push({title: 'Uncensored', value: 'uncen'})
+                }
 
             const response = await prompts(options);
 
