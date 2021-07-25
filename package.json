@@ -1,6 +1,6 @@
 {
   "name": "gogo-dl",
-  "version": "3.0.1",
+  "version": "3.0.2",
   "license": "(MIT OR Apache-2.0)",
   "dependencies": {
     "aria2": "^4.1.2",
@@ -43,8 +43,9 @@
     "dev": "ts-node ./src/index.ts list"
   },
   "bin": {
-    "gogo": "dist/index.js"
+    "gogo": "./dist/index.js"
   },
+  "main": "./dist/index.js",
   "repository": {
     "type": "git",
     "url": "https://github.com/naveengovind/gogo-dl"
