@@ -1,6 +1,6 @@
 {
   "name": "gogo-dl",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "license": "(MIT OR Apache-2.0)",
   "dependencies": {
     "aria2": "^4.1.2",
@@ -12,6 +12,7 @@
     "got": "^11.8.2",
     "jsdom": "^16.5.3",
     "loading-spinner": "^1.2.1",
+    "make-dir": "^3.1.0",
     "nconf": "^0.11.2",
     "node-fetch": "^2.6.1",
     "node-mpv": "^2.0.0-beta.2",
@@ -38,7 +39,7 @@
   },
   "scripts": {
     "build": "tsc",
-    "start": "npm run build && node ./dist/index.js list",
+    "start": "npm run build && node ./dist/index.js list -w",
     "dev": "ts-node ./src/index.ts list"
   },
   "bin": {

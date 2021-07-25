@@ -9,7 +9,6 @@ import {utils} from "../utils/utils";
 import ConfigFile from "../utils/ConfigFile";
 const cliProgress = require('cli-progress');
 let commandExists = require('command-exists');
-let nconf = new ConfigFile(utils.getConfigPath())
 export let dl = {
     async download(anime: Anime, lower: number, upper: number, type:string)
     {
@@ -84,6 +83,7 @@ export let dl = {
             }, 0);
         });
         await delay(2000)
+        let nconf = new ConfigFile(await utils.getConfigPath())
         for(let i: number = lower; i <= upper; i++) {
             let url = await driver.getOptimizedPlayer(anime,i,type)
             //let url = 'https://file-examples-com.github.io/uploads/2017/04/file_example_MP4_480_1_5MG.mp4'

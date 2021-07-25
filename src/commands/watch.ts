@@ -6,9 +6,8 @@ import MPV from "../players/MPV";
 import {utils} from "../utils/utils";
 import {driver} from "../driver/driver";
 import ConfigFile from "../utils/ConfigFile";
-let nconf = new ConfigFile(utils.getConfigPath())
 export let watch = {
-    getPlayer: function (player: string | undefined): string
+    getPlayer: function (nconf:ConfigFile, player: string | undefined): string
     {
         if(player === undefined)
         {
@@ -33,13 +32,14 @@ export let watch = {
     },
     watch: async function (anime: Anime, lower:number, upper:number, player:string | undefined, type:string)
     {
+        let nconf = new ConfigFile(await utils.getConfigPath())
         let videoPlayer: VideoPlayer;
         for (let i: number = lower; i <= upper; i++) {
             console.log(chalk.gray('fetching episode ' + i + ' ...'))
             let stream = await driver.getOptimizedPlayer(anime, i, type)
             if (stream !== null && stream !== undefined && stream !== '') {
                 if (i === lower) {
-                    player = this.getPlayer(player)
+                    player = this.getPlayer(nconf, player)
                     if(player === 'vlc')
                         videoPlayer = new VLC(stream)
                     else if(player === 'mpv')
