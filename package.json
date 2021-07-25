@@ -1,6 +1,6 @@
 {
   "name": "gogo-dl",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "license": "(MIT OR Apache-2.0)",
   "dependencies": {
     "aria2": "^4.1.2",

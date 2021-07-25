@@ -6,7 +6,6 @@ import UserAgent from 'user-agents';
 let BASE_URL = 'https://9anime.pw';
 const fetch = require('node-fetch');
 
-
 export default class NineAnime extends site{
     constructor()
     {

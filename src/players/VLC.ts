@@ -33,10 +33,12 @@ export default class VLC extends VideoPlayer{
         }
     }
     async append(url: string):Promise<any> {
-         await this.check()
+        await this.check()
         const browser = await puppeteer.launch();
         const page = await browser.newPage();
-        return await (await page.goto(`http://:${secret}@localhost:6942/requests/status.json?command=in_enqueue&input=${url}`)).json()
+        let ret = await (await page.goto(`http://:${secret}@localhost:6942/requests/status.json?command=in_enqueue&input=${url}`)).json()
+        browser.close()
+        return ret
      }
 
      async getPercentPos(){
@@ -54,14 +56,18 @@ export default class VLC extends VideoPlayer{
          await this.check()
          const browser = await puppeteer.launch();
          const page = await browser.newPage();
-         return await (await page.goto(`http://:${secret}@localhost:6942/requests/status.json`)).json()
+         let ret  = await (await page.goto(`http://:${secret}@localhost:6942/requests/status.json`)).json()
+         browser.close()
+         return ret
      }
 
     private async get_playlist():Promise<any>{
          await this.check()
         const browser = await puppeteer.launch();
         const page = await browser.newPage();
-        return await (await page.goto(`http://:${secret}@localhost:6942/requests/playlist.json`)).json()
+        let ret = await (await page.goto(`http://:${secret}@localhost:6942/requests/playlist.json`)).json()
+        browser.close()
+        return ret
     }
 
      async getFileName():Promise<string>{
@@ -78,10 +84,7 @@ export default class VLC extends VideoPlayer{
                      return child['uri'].toString()
                  }
              }
-         }catch (e)
-         {
-
-         }
+         }catch (e) {}
          return ''
     }
 
