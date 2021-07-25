@@ -15,7 +15,6 @@ interface Arguments {
     vlc:boolean
 }
 const DEBUG = false
-let nconf = new ConfigFile(utils.getConfigPath())
 function main() {
     try
     {
@@ -102,6 +101,7 @@ function main() {
                 })
             }, async function (argv: Arguments)
             {
+                let nconf = new ConfigFile(await utils.getConfigPath())
                 if(nconf.get('token') === undefined){
                     console.log(chalk.yellowBright("Authentication is required for this action\nrun") + ("\"gogo auth\"") + chalk.yellowBright("to authenticate with MAL"))
                     process.exit(0)
@@ -133,6 +133,7 @@ function main() {
                 })
             }, async function (argv: Arguments)
             {
+                let nconf = new ConfigFile(await utils.getConfigPath())
                 if(nconf.get('token') === undefined){
                     console.log(chalk.yellowBright("Authentication is required for this action\nrun") + ("\"gogo auth\"") + chalk.yellowBright("to authenticate with MAL"))
                     process.exit(0)
@@ -144,6 +145,7 @@ function main() {
 
             }, async function (argv: Arguments)
             {
+                let nconf = new ConfigFile(await utils.getConfigPath())
                 if(nconf.get('token') === undefined){
                     console.log(chalk.yellowBright("Authentication is required for this action\nrun") + ("\"gogo auth\"") + chalk.yellowBright("to authenticate with MAL"))
                     process.exit(0)

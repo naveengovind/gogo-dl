@@ -111,7 +111,7 @@ export default class MyAnimeList
                         code_verifier: verifier,
                     }
                 };
-                resolve(await self.configure_token(options, new ConfigFile(utils.getConfigPath())))
+                resolve(await self.configure_token(options, new ConfigFile(await utils.getConfigPath())))
             })
         })
     }
@@ -119,7 +119,7 @@ export default class MyAnimeList
     {
         return new Promise(async resolve =>
         {
-            let nconf = new ConfigFile(utils.getConfigPath())
+            let nconf = new ConfigFile(await utils.getConfigPath())
             if (nconf.get('token') !== undefined && nconf.get('token')['access_token_expires_on'] > Date.now())
             {
                 resolve(nconf.get('token')['token_type'] + ' ' + nconf.get('token')['access_token'])
@@ -153,7 +153,7 @@ export default class MyAnimeList
 
     async search(q: string, parameters: {limit?: number, offset?: number} = {limit: 100, offset: 0}): Promise<Array<AnimeWatchInfo>>
     {
-        let nconf = new ConfigFile(utils.getConfigPath())
+        let nconf = new ConfigFile(await utils.getConfigPath())
         if(nconf.get('token') === undefined){
             const url = "https://api.jikan.moe/v3/search/anime?"
             let data = new URLSearchParams()

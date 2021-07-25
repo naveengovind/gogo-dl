@@ -2,6 +2,7 @@ import fs = require("fs");
 const path = require('path')
 import https from "https";
 import MyAnimeList from "./mal_utils";
+const makeDir = require('make-dir');
 
 let mal = new MyAnimeList("00d2c5d06cc8ec154ddd8c8c22ace667")
 
@@ -21,7 +22,7 @@ export let utils = {
     getMal(){
         return mal
     },
-    getConfigDirectory(): string{
+    async getConfigDirectory(): Promise<string>{
         let conf: string
         if(process.platform.startsWith('win'))
             conf = path.join(require('os').homedir(), 'AppData', 'Roaming', 'gogo-dl')
@@ -30,12 +31,11 @@ export let utils = {
         if(fs.existsSync(conf)){
             return conf
         }else{
-            fs.mkdirSync(path.dirname(conf), { recursive: true })
-            return conf
+            return await makeDir(conf);
         }
     },
-    getConfigPath(): string{
-        let conf: string = path.join(this.getConfigDirectory(), 'config.json')
+    async getConfigPath(): Promise<string>{
+        let conf: string = path.join(await this.getConfigDirectory(), 'config.json')
         if(fs.existsSync(conf)){
             return conf
         }else{
