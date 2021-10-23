@@ -61,7 +61,7 @@ export default class MyAnimeList
         server.listen(5678);
         await open(url + data.toString());
     }
-   private async refresh_access(nconf:any){
+    private async refresh_access(nconf:any){
         const url = "https://myanimelist.net/v1/oauth2/token";
         let options = {
             method: "POST",
@@ -162,6 +162,7 @@ export default class MyAnimeList
             data.set('page', parameters.offset!+1)
             let ret = await (await fetch(url+data.toString())).json()
             ret = ret.results
+						ret = ret.filter((mal_rest:any)=>mal_rest.start_date?true:false);
             let rets:Array<AnimeWatchInfo> = []
             for(const mal_rest of ret){
                 rets.push({
