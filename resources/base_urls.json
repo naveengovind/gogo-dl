@@ -1,10 +1,13 @@
 {
   "sources": {
     "Gogoanime": {
-      "url": "https://gogoanime.vc"
+      "url": "https://gogoanime.film"
     },
     "9anime": {
-      "url": "https://9anime.pw"
+      "url": "https://9anime.to"
+    },
+    "Animixplay": {
+      "url": "https://animixplay.to"
     }
   }
 }
